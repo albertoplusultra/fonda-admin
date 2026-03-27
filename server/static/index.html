@@ -8,65 +8,101 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #faf8f5;
+      --bg: #f7f6f2;
       --surface: #ffffff;
-      --text: #2c1810;
-      --text-muted: #8a7a6e;
-      --accent: #8b6914;
-      --accent-hover: #6d5210;
-      --border: #e8e0d6;
-      --success: #2d7a3a;
-      --error: #c0392b;
+      --text: #152133;
+      --text-muted: #5e6774;
+      --accent: #b08c52;
+      --accent-hover: #957342;
+      --border: #d8dee7;
+      --success: #2f6f4f;
+      --error: #af3f3f;
       --radius: 12px;
     }
 
     body {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-family: "Brown", "Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      align-items: center;
     }
 
     header {
       width: 100%;
-      background: var(--surface);
+      background: var(--bg);
       border-bottom: 1px solid var(--border);
-      padding: 1.25rem 2rem;
+      padding: 1rem 1.5rem;
       display: flex;
       align-items: center;
-      gap: 1rem;
+      justify-content: flex-start;
     }
 
-    header h1 {
-      font-size: 1.15rem;
-      font-weight: 600;
-      letter-spacing: -0.01em;
+    .brand-logo {
+      display: block;
+      width: min(280px, 55vw);
+      height: auto;
     }
 
-    header .badge {
+    .app-layout {
+      width: 100%;
+      display: flex;
+      gap: 0;
+      flex: 1;
+    }
+
+    .sidebar {
+      width: 250px;
+      background: transparent;
+      border-right: 1px solid #e5e9f0;
+      padding: 1.1rem 0.9rem;
+    }
+
+    .sidebar-title {
       font-size: 0.7rem;
-      font-weight: 500;
-      color: var(--accent);
-      background: #f5eedd;
-      padding: 0.2rem 0.6rem;
-      border-radius: 20px;
+      font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.12em;
+      color: #6b7280;
+      margin: 0 0.55rem 0.55rem;
     }
+
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.45rem;
+    }
+
+    .sidebar-item {
+      display: block;
+      width: 100%;
+      color: #3b4656;
+      font-size: 0.9rem;
+      text-align: left;
+      padding: 0.15rem 0;
+      font-weight: 400;
+    }
+
+    .sidebar-item.active {
+      color: #152133;
+      font-weight: 500;
+    }
+
 
     main {
       width: 100%;
-      max-width: 580px;
-      padding: 2.5rem 1.5rem;
+      padding: 2rem 1.5rem;
       display: flex;
       flex-direction: column;
+      align-items: center;
       gap: 1.5rem;
     }
 
     .card {
+      width: 100%;
+      max-width: 500px;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -74,9 +110,12 @@
     }
 
     .card-title {
-      font-size: 1.05rem;
+      color: var(--text);
+      font-size: 1.2rem;
       font-weight: 600;
-      margin-bottom: 0.35rem;
+      letter-spacing: 0.02em;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
     }
 
     .card-desc {
@@ -87,7 +126,7 @@
     }
 
     .drop-zone {
-      border: 2px dashed var(--border);
+      border: 1.5px dashed #bac5d4;
       border-radius: var(--radius);
       padding: 2.5rem 1.5rem;
       text-align: center;
@@ -98,12 +137,12 @@
 
     .drop-zone:hover, .drop-zone.drag-over {
       border-color: var(--accent);
-      background: #fdf8ee;
+      background: #fcfaf6;
     }
 
     .drop-zone.has-file {
-      border-color: var(--success);
-      background: #f0f8f1;
+      border-color: #4d8468;
+      background: #f3f8f5;
       border-style: solid;
     }
 
@@ -115,8 +154,9 @@
     }
 
     .drop-zone .icon {
-      font-size: 2.25rem;
-      margin-bottom: 0.5rem;
+      font-size: 2rem;
+      margin-bottom: 0.55rem;
+      color: var(--accent);
     }
 
     .drop-zone .label {
@@ -134,7 +174,8 @@
       gap: 0.75rem;
       margin-top: 1.25rem;
       padding: 0.75rem 1rem;
-      background: #f9f6f2;
+      background: #f8f8f6;
+      border: 1px solid #e4e8ef;
       border-radius: 8px;
       font-size: 0.85rem;
     }
@@ -177,11 +218,17 @@
     }
 
     .btn-primary {
-      background: var(--accent);
-      color: #fff;
+      background: var(--text);
+      color: var(--bg);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
     }
 
-    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-primary:hover:not(:disabled) {
+      background: #0f1a2c;
+      box-shadow: 0 6px 16px rgba(21, 33, 51, 0.18);
+      transform: translateY(-1px);
+    }
 
     .btn-primary:disabled {
       opacity: 0.45;
@@ -209,16 +256,16 @@
 
     .status-msg.success {
       display: block;
-      background: #edf7ee;
-      color: var(--success);
-      border: 1px solid #c8e6c9;
+      background: #edf6f1;
+      color: #245840;
+      border: 1px solid #cae2d6;
     }
 
     .status-msg.error {
       display: block;
-      background: #fdecea;
+      background: #fbefef;
       color: var(--error);
-      border: 1px solid #f5c6cb;
+      border: 1px solid #f0cfcf;
     }
 
     footer {
@@ -226,45 +273,68 @@
       padding: 1.5rem;
       font-size: 0.75rem;
       color: var(--text-muted);
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .app-layout {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
     }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>Fonda de los Príncipes</h1>
-  <span class="badge">Admin</span>
+  <img src="/static/logo_fonda.svg" alt="La Fonda de los Príncipes" class="brand-logo">
 </header>
 
-<main>
-  <div class="card">
-    <h2 class="card-title">Generar cartas de bienvenida</h2>
-    <p class="card-desc">
-      Sube el archivo Excel con las columnas <strong>TITULAR</strong> y <strong>HABITACIÓN</strong>.
-      Se generará un PDF personalizado por cada huésped y se descargará como ZIP.
-    </p>
+<div class="app-layout">
+  <aside class="sidebar">
+    <p class="sidebar-title">Administración</p>
+    <nav class="sidebar-nav">
+      <div class="sidebar-item active">
+        <span>Crear cartas de bienvenida</span>
+      </div>
+    </nav>
+  </aside>
 
-    <div class="drop-zone" id="dropZone">
-      <input type="file" id="fileInput" accept=".xlsx,.xls">
-      <div class="icon">📄</div>
-      <div class="label">Arrastra tu archivo aquí o <strong>haz clic para seleccionar</strong></div>
+  <main>
+    <div class="card">
+      <h2 class="card-title">Crear cartas de bienvenida</h2>
+      <p class="card-desc">
+        Sube el excel que has exportado de Prestige PMS.
+        Se generará un PDF personalizado por cada huésped y se descargará como ZIP.
+      </p>
+
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" accept=".xlsx,.xls">
+        <div class="icon">📄</div>
+        <div class="label">Arrastra tu archivo aquí o <strong>haz clic para seleccionar</strong></div>
+      </div>
+
+      <div class="file-info" id="fileInfo" style="display:none">
+        <span class="file-icon">📊</span>
+        <span class="file-name" id="fileName"></span>
+        <button class="remove-btn" id="removeBtn" title="Quitar archivo">&times;</button>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="publishBtn" disabled>
+          <span id="btnText">Publicar cartas</span>
+        </button>
+      </div>
+
+      <div class="status-msg" id="statusMsg"></div>
     </div>
-
-    <div class="file-info" id="fileInfo" style="display:none">
-      <span class="file-icon">📊</span>
-      <span class="file-name" id="fileName"></span>
-      <button class="remove-btn" id="removeBtn" title="Quitar archivo">&times;</button>
-    </div>
-
-    <div class="actions">
-      <button class="btn btn-primary" id="publishBtn" disabled>
-        <span id="btnText">Publicar cartas</span>
-      </button>
-    </div>
-
-    <div class="status-msg" id="statusMsg"></div>
-  </div>
-</main>
+  </main>
+</div>
 
 <footer>Fonda de los Príncipes &copy; 2026</footer>
 
