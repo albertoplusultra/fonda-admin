@@ -9,3 +9,4 @@ curl_headers.txt
 *.tmp
 .DS_Store
 Thumbs.db
+.vercel/

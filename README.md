@@ -16,7 +16,8 @@ npm install
 
 Coloca en `server/assets/`:
 - `Lucida-Calligraphy.ttf` — fuente para las cartas (ya incluida)
-- `logo_opt.jpg` — logo de la Fonda (opcional, se muestra un texto si no existe)
+- `logo_fonda.svg` — logo oficial (prioridad 1, recomendado para máxima nitidez)
+- `logo_fonda.png` — alternativa si no hay SVG
 
 ## Ejecución
 
@@ -33,3 +34,19 @@ Abrir http://localhost:8000 en el navegador.
 3. Se descarga automáticamente un ZIP con un PDF personalizado por huésped
 
 El sistema detecta automáticamente el idioma (ES/EN) y género para personalizar el saludo.
+
+## Deploy en Vercel
+
+Este repositorio ya está preparado para Vercel con:
+- endpoint serverless en `api/index.js`
+- configuración en `vercel.json`
+- soporte de Puppeteer en Vercel con `@sparticuz/chromium` + `puppeteer-core`
+
+Pasos:
+1. Importar el repo en Vercel.
+2. Framework Preset: `Other`.
+3. Build Command: vacío.
+4. Output Directory: vacío.
+5. Install Command: `npm install`.
+
+La ruta principal es `/` y la API de generación es `/api/generar-cartas`.

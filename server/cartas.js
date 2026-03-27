@@ -1,7 +1,6 @@
 const fs = require("fs");
 const path = require("path");
 const XLSX = require("xlsx");
-const puppeteer = require("puppeteer");
 const archiver = require("archiver");
 
 const ASSETS_DIR = path.join(__dirname, "assets");
@@ -85,6 +84,26 @@ function resolveLogoPath() {
     if (fs.existsSync(logoPath)) return logoPath;
   }
   throw new Error("No se encontró el logotipo en server/assets.");
+}
+
+async function launchBrowser() {
+  // En Vercel usamos chromium serverless; en local usamos puppeteer completo.
+  if (process.env.VERCEL) {
+    const puppeteerCore = require("puppeteer-core");
+    const chromium = require("@sparticuz/chromium");
+
+    return puppeteerCore.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: true,
+    });
+  }
+
+  const puppeteer = require("puppeteer");
+  return puppeteer.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  });
 }
 
 function detectLanguage(fullName) {
@@ -251,10 +270,7 @@ async function generateCartasZip(excelBuffer) {
   const logoB64 = imgToBase64(logoPath);
   const fontB64 = fontToBase64();
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  });
+  const browser = await launchBrowser();
 
   const report = [];
 

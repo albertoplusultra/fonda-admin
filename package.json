@@ -12,10 +12,12 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@sparticuz/chromium": "^138.0.2",
     "archiver": "^7.0.1",
     "express": "^5.2.1",
     "multer": "^2.1.1",
     "puppeteer": "^24.40.0",
+    "puppeteer-core": "^24.40.0",
     "xlsx": "^0.18.5"
   }
 }
