@@ -1,0 +1,11 @@
+node_modules/
+
+# Archivos temporales de pruebas locales
+cartas_test.zip
+curl_headers.txt
+
+# Logs y artefactos
+*.log
+*.tmp
+.DS_Store
+Thumbs.db

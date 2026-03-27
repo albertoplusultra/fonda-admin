@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fonda de los Príncipes — Admin</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #faf8f5;
+      --surface: #ffffff;
+      --text: #2c1810;
+      --text-muted: #8a7a6e;
+      --accent: #8b6914;
+      --accent-hover: #6d5210;
+      --border: #e8e0d6;
+      --success: #2d7a3a;
+      --error: #c0392b;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      width: 100%;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    header h1 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    header .badge {
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--accent);
+      background: #f5eedd;
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    main {
+      width: 100%;
+      max-width: 580px;
+      padding: 2.5rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+
+    .card-desc {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 1.5rem;
+    }
+
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: #fdf8ee;
+    }
+
+    .drop-zone.has-file {
+      border-color: var(--success);
+      background: #f0f8f1;
+      border-style: solid;
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .drop-zone .icon {
+      font-size: 2.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .drop-zone .label {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .drop-zone .label strong {
+      color: var(--accent);
+    }
+
+    .file-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+      padding: 0.75rem 1rem;
+      background: #f9f6f2;
+      border-radius: 8px;
+      font-size: 0.85rem;
+    }
+
+    .file-info .file-icon { font-size: 1.3rem; }
+    .file-info .file-name { flex: 1; font-weight: 500; word-break: break-all; }
+
+    .file-info .remove-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 0.25rem;
+      border-radius: 4px;
+      transition: color 0.15s;
+    }
+
+    .file-info .remove-btn:hover { color: var(--error); }
+
+    .actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 0.85rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+
+    .btn-primary:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2.5px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .status-msg {
+      padding: 0.85rem 1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      display: none;
+    }
+
+    .status-msg.success {
+      display: block;
+      background: #edf7ee;
+      color: var(--success);
+      border: 1px solid #c8e6c9;
+    }
+
+    .status-msg.error {
+      display: block;
+      background: #fdecea;
+      color: var(--error);
+      border: 1px solid #f5c6cb;
+    }
+
+    footer {
+      margin-top: auto;
+      padding: 1.5rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Fonda de los Príncipes</h1>
+  <span class="badge">Admin</span>
+</header>
+
+<main>
+  <div class="card">
+    <h2 class="card-title">Generar cartas de bienvenida</h2>
+    <p class="card-desc">
+      Sube el archivo Excel con las columnas <strong>TITULAR</strong> y <strong>HABITACIÓN</strong>.
+      Se generará un PDF personalizado por cada huésped y se descargará como ZIP.
+    </p>
+
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" accept=".xlsx,.xls">
+      <div class="icon">📄</div>
+      <div class="label">Arrastra tu archivo aquí o <strong>haz clic para seleccionar</strong></div>
+    </div>
+
+    <div class="file-info" id="fileInfo" style="display:none">
+      <span class="file-icon">📊</span>
+      <span class="file-name" id="fileName"></span>
+      <button class="remove-btn" id="removeBtn" title="Quitar archivo">&times;</button>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="publishBtn" disabled>
+        <span id="btnText">Publicar cartas</span>
+      </button>
+    </div>
+
+    <div class="status-msg" id="statusMsg"></div>
+  </div>
+</main>
+
+<footer>Fonda de los Príncipes &copy; 2026</footer>
+
+<script>
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+  const fileInfo = document.getElementById('fileInfo');
+  const fileName = document.getElementById('fileName');
+  const removeBtn = document.getElementById('removeBtn');
+  const publishBtn = document.getElementById('publishBtn');
+  const btnText = document.getElementById('btnText');
+  const statusMsg = document.getElementById('statusMsg');
+
+  let selectedFile = null;
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    if (e.dataTransfer.files.length) setFile(e.dataTransfer.files[0]);
+  });
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length) setFile(fileInput.files[0]);
+  });
+
+  removeBtn.addEventListener('click', clearFile);
+
+  function setFile(file) {
+    if (!file.name.match(/\.xlsx?$/i)) {
+      showStatus('Solo se aceptan archivos Excel (.xlsx)', 'error');
+      return;
+    }
+    selectedFile = file;
+    fileName.textContent = file.name;
+    fileInfo.style.display = 'flex';
+    dropZone.classList.add('has-file');
+    publishBtn.disabled = false;
+    hideStatus();
+  }
+
+  function clearFile() {
+    selectedFile = null;
+    fileInput.value = '';
+    fileInfo.style.display = 'none';
+    dropZone.classList.remove('has-file');
+    publishBtn.disabled = true;
+    hideStatus();
+  }
+
+  function showStatus(msg, type) {
+    statusMsg.textContent = msg;
+    statusMsg.className = 'status-msg ' + type;
+    statusMsg.style.marginTop = '1rem';
+  }
+
+  function hideStatus() {
+    statusMsg.className = 'status-msg';
+    statusMsg.style.marginTop = '0';
+  }
+
+  function setLoading(loading) {
+    publishBtn.disabled = loading;
+    if (loading) {
+      btnText.innerHTML = '<span class="spinner"></span> Generando…';
+    } else {
+      btnText.textContent = 'Publicar cartas';
+      if (selectedFile) publishBtn.disabled = false;
+    }
+  }
+
+  publishBtn.addEventListener('click', async () => {
+    if (!selectedFile) return;
+    setLoading(true);
+    hideStatus();
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    try {
+      const res = await fetch('/api/generar-cartas', { method: 'POST', body: formData });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || err.detail || 'Error desconocido');
+      }
+
+      const count = res.headers.get('X-Cartas-Count') || '?';
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Cartas_Bienvenida.zip';
+      a.click();
+      URL.revokeObjectURL(url);
+
+      showStatus(`Se generaron ${count} carta(s) correctamente. Descarga iniciada.`, 'success');
+      clearFile();
+    } catch (err) {
+      showStatus(err.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  });
+</script>
+
+</body>
+</html>
