@@ -59,17 +59,20 @@ function safeName(v) {
     .slice(0, 80);
 }
 
+const CHROMIUM_PACK_URL =
+  "https://github.com/Sparticuz/chromium/releases/download/v143.0.4/chromium-v143.0.4-pack.x64.tar";
+
 async function getBrowser() {
   if (!browserPromise) {
     const isVercel = !!process.env.VERCEL;
     if (isVercel) {
-      const chromium = require("@sparticuz/chromium");
+      const chromium = require("@sparticuz/chromium-min");
       const puppeteer = require("puppeteer-core");
       browserPromise = puppeteer.launch({
         args: chromium.args,
         defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(),
-        headless: chromium.headless,
+        executablePath: await chromium.executablePath(CHROMIUM_PACK_URL),
+        headless: "shell",
       });
     } else {
       const puppeteer = require("puppeteer");
