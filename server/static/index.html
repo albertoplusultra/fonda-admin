@@ -950,6 +950,23 @@
     }
   }
 
+  const BATCH_SIZE = 2;
+
+  async function fetchBatch(hotelsBatch, days) {
+    const res = await fetch('/api/precios-competencia/matriz', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hotels: hotelsBatch, days }),
+    });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch { data = {}; }
+    if (!res.ok) {
+      throw new Error(data.error || `HTTP ${res.status}: ${text.slice(0, 200)}`);
+    }
+    return data;
+  }
+
   scrapeBtn.addEventListener('click', async () => {
     hideScrapeStatus();
     const hotels = parseCompetitors(competitorsInput.value);
@@ -960,28 +977,33 @@
     }
 
     setScrapeLoading(true);
+    let merged = null;
+    let processed = 0;
     try {
-      const res = await fetch('/api/precios-competencia/matriz', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          hotels,
-          days: 15,
-        }),
-      });
-      const text = await res.text();
-      let data;
-      try { data = JSON.parse(text); } catch { data = {}; }
-      if (!res.ok) {
-        const detail = data.error || `HTTP ${res.status}: ${text.slice(0, 200)}`;
-        throw new Error(detail);
+      for (let i = 0; i < hotels.length; i += BATCH_SIZE) {
+        const batch = hotels.slice(i, i + BATCH_SIZE);
+        showScrapeStatus(`Consultando hoteles ${i + 1}–${Math.min(i + BATCH_SIZE, hotels.length)} de ${hotels.length}…`, 'success');
+        const data = await fetchBatch(batch, 15);
+
+        if (!merged) {
+          merged = data;
+        } else {
+          merged.hotels.push(...data.hotels);
+        }
+        processed += batch.length;
+
+        renderPricesTable(merged);
       }
-      renderPricesTable(data);
-      loadAndApplyHistory(data);
-      const nights = Number(data.stayNights) || 1;
-      showScrapeStatus(`Tabla actualizada para ${hotels.length} hoteles y 15 días (estancia de ${nights} noche).`, 'success');
+
+      loadAndApplyHistory(merged);
+      showScrapeStatus(`Tabla actualizada: ${processed} hoteles, 15 días.`, 'success');
     } catch (err) {
-      showScrapeStatus(err.message, 'error');
+      if (merged && merged.hotels.length) {
+        renderPricesTable(merged);
+        showScrapeStatus(`Error en lote (${processed} de ${hotels.length} completados): ${err.message}`, 'error');
+      } else {
+        showScrapeStatus(err.message, 'error');
+      }
     } finally {
       setScrapeLoading(false);
     }

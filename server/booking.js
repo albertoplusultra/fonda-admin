@@ -173,21 +173,20 @@ async function scrapeHotelPrices(hotel, dates) {
     await page.setUserAgent(DEFAULT_HEADERS["user-agent"]);
     await page.setExtraHTTPHeaders({ "accept-language": DEFAULT_HEADERS["accept-language"] });
 
-    // First load to accept cookies
-    await page.goto(hotel.url, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await new Promise((r) => setTimeout(r, 2000));
+    await page.goto(hotel.url, { waitUntil: "domcontentloaded", timeout: 30000 });
+    await new Promise((r) => setTimeout(r, 1000));
     const cookieBtn = await page.$("#onetrust-accept-btn-handler");
     if (cookieBtn) await cookieBtn.click().catch(() => {});
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 300));
 
     for (const isoDate of dates) {
       try {
         const checkout = toISODate(addDays(new Date(isoDate), 1));
         const dateUrl = `${hotel.url}?checkin=${isoDate}&checkout=${checkout}&group_adults=2&no_rooms=1&group_children=0&selected_currency=EUR`;
 
-        await page.goto(dateUrl, { waitUntil: "domcontentloaded", timeout: 45000 });
-        await page.waitForSelector("#hprt-table, table.hprt-table", { timeout: 20000 }).catch(() => {});
-        await new Promise((r) => setTimeout(r, 1500));
+        await page.goto(dateUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
+        await page.waitForSelector("#hprt-table, table.hprt-table", { timeout: 15000 }).catch(() => {});
+        await new Promise((r) => setTimeout(r, 500));
 
         const result = await extractMinPriceFromRoomTable(page);
         results[isoDate].price = result.price;
@@ -222,8 +221,7 @@ async function generateCompetitionMatrix({ hotels, days = 15, startDate }) {
 
   const dates = Array.from({ length: safeDays }, (_, i) => toISODate(addDays(start, i)));
 
-  // Parallel scraping: 3 hotels at a time (each opens its own browser tab)
-  const hotelResults = await runPool(normalizedHotels, 3, async (hotel) => {
+  const hotelResults = await runPool(normalizedHotels, 2, async (hotel) => {
     const pricesByDate = await scrapeHotelPrices(hotel, dates);
     return {
       ...hotel,
