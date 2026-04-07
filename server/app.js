@@ -14,7 +14,7 @@ const STATIC_DIR = path.join(__dirname, "static");
 app.use(express.json({ limit: "32kb" }));
 app.use("/static", express.static(STATIC_DIR));
 
-initDb();
+initDb().catch((err) => console.error("Error inicializando BD:", err));
 
 app.get("/", (_req, res) => {
   res.sendFile(path.join(STATIC_DIR, "index.html"));
@@ -73,9 +73,9 @@ app.post("/api/precios-competencia/matriz", async (req, res) => {
   }
 });
 
-app.get("/api/precios-competencia/ultimo", (_req, res) => {
+app.get("/api/precios-competencia/ultimo", async (_req, res) => {
   try {
-    const data = getLatestRun();
+    const data = await getLatestRun();
     if (!data) return res.json(null);
     return res.json(data);
   } catch (error) {
@@ -85,7 +85,7 @@ app.get("/api/precios-competencia/ultimo", (_req, res) => {
   }
 });
 
-app.get("/api/precios-competencia/historial", (req, res) => {
+app.get("/api/precios-competencia/historial", async (req, res) => {
   try {
     const hotelsParam = req.query.hotels;
     const datesParam = req.query.dates;
@@ -101,7 +101,7 @@ app.get("/api/precios-competencia/historial", (req, res) => {
       return res.status(400).json({ error: "Los parámetros hotels y dates no pueden estar vacíos." });
     }
 
-    const history = getHistoryBulk(hotels, dates, 7);
+    const history = await getHistoryBulk(hotels, dates, 7);
     return res.json(history);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Error inesperado";

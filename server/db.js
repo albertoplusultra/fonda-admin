@@ -1,30 +1,29 @@
-const path = require("path");
-const fs = require("fs");
+const { createClient } = require("@libsql/client");
 
-let Database;
-try {
-  Database = require("better-sqlite3");
-} catch {
-  Database = null;
+let _client = null;
+
+function getClient() {
+  if (_client) return _client;
+
+  const url = process.env.TURSO_DATABASE_URL || process.env.DB_TURSO_DATABASE_URL;
+  const authToken = process.env.TURSO_AUTH_TOKEN || process.env.DB_TURSO_AUTH_TOKEN;
+
+  if (!url) {
+    console.warn("Turso no configurado: falta TURSO_DATABASE_URL");
+    return null;
+  }
+
+  _client = createClient({ url, authToken });
+  return _client;
 }
 
-const DATA_DIR = path.join(__dirname, "data");
-const DB_PATH = path.join(DATA_DIR, "prices.db");
+async function initDb() {
+  const client = getClient();
+  if (!client) return;
 
-let _db = null;
-let _available = !!Database;
-
-function getDb() {
-  if (!_available) return null;
-  if (_db) return _db;
-
-  try {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-    _db = new Database(DB_PATH);
-    _db.pragma("journal_mode = WAL");
-
-    _db.exec(`
-      CREATE TABLE IF NOT EXISTS price_history (
+  await client.batch(
+    [
+      `CREATE TABLE IF NOT EXISTS price_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         scraped_at TEXT NOT NULL,
         hotel_name TEXT NOT NULL,
@@ -32,84 +31,60 @@ function getDb() {
         target_date TEXT NOT NULL,
         price REAL,
         error TEXT
-      );
-      CREATE INDEX IF NOT EXISTS idx_hotel_date
-        ON price_history(hotel_name, target_date);
-    `);
-  } catch (err) {
-    console.warn("SQLite no disponible:", err.message);
-    _available = false;
-    return null;
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_hotel_date
+        ON price_history(hotel_name, target_date)`,
+    ],
+    "write",
+  );
+}
+
+async function saveScrapingRun(scrapedAt, hotels, dates) {
+  const client = getClient();
+  if (!client) return;
+
+  const stmts = [];
+  for (const hotel of hotels) {
+    for (let i = 0; i < dates.length; i++) {
+      const entry = hotel.prices[i];
+      stmts.push({
+        sql: `INSERT INTO price_history (scraped_at, hotel_name, hotel_url, target_date, price, error)
+              VALUES (?, ?, ?, ?, ?, ?)`,
+        args: [
+          scrapedAt,
+          hotel.name,
+          hotel.url,
+          entry.date,
+          entry.price ?? null,
+          entry.error ?? null,
+        ],
+      });
+    }
   }
 
-  return _db;
+  await client.batch(stmts, "write");
 }
 
-function initDb() {
-  getDb();
-}
+async function getHistoryBulk(hotelNames, dates, limit = 7) {
+  const client = getClient();
+  if (!client) return {};
 
-/**
- * Persist every cell of a scraping run inside a single transaction.
- * @param {string} scrapedAt  ISO timestamp of this run
- * @param {Array}  hotels     array of { name, url, prices: [{ date, price, error }] }
- * @param {string[]} dates    ordered ISO date strings
- */
-function saveScrapingRun(scrapedAt, hotels, dates) {
-  const db = getDb();
-  if (!db) return;
-  const insert = db.prepare(`
-    INSERT INTO price_history (scraped_at, hotel_name, hotel_url, target_date, price, error)
-    VALUES (@scrapedAt, @hotelName, @hotelUrl, @targetDate, @price, @error)
-  `);
+  const phH = hotelNames.map(() => "?").join(",");
+  const phD = dates.map(() => "?").join(",");
 
-  const runAll = db.transaction(() => {
-    for (const hotel of hotels) {
-      for (let i = 0; i < dates.length; i++) {
-        const entry = hotel.prices[i];
-        insert.run({
-          scrapedAt,
-          hotelName: hotel.name,
-          hotelUrl: hotel.url,
-          targetDate: entry.date,
-          price: entry.price ?? null,
-          error: entry.error ?? null,
-        });
-      }
-    }
+  const rs = await client.execute({
+    sql: `SELECT hotel_name, target_date, price, scraped_at
+          FROM price_history
+          WHERE hotel_name IN (${phH})
+            AND target_date IN (${phD})
+          ORDER BY hotel_name, target_date, scraped_at DESC`,
+    args: [...hotelNames, ...dates],
   });
-
-  runAll();
-}
-
-/**
- * Return the last N prices for every (hotel, date) combination.
- * @param {string[]} hotelNames
- * @param {string[]} dates
- * @param {number}   limit
- * @returns {{ [hotelName]: { [date]: Array<{price:number|null, scraped_at:string}> } }}
- */
-function getHistoryBulk(hotelNames, dates, limit = 7) {
-  const db = getDb();
-  if (!db) return {};
-
-  const placeholdersH = hotelNames.map(() => "?").join(",");
-  const placeholdersD = dates.map(() => "?").join(",");
-
-  const rows = db
-    .prepare(
-      `SELECT hotel_name, target_date, price, scraped_at
-       FROM price_history
-       WHERE hotel_name IN (${placeholdersH})
-         AND target_date IN (${placeholdersD})
-       ORDER BY hotel_name, target_date, scraped_at DESC`,
-    )
-    .all(...hotelNames, ...dates);
 
   const result = {};
   const counters = {};
 
-  for (const row of rows) {
+  for (const row of rs.rows) {
     const key = `${row.hotel_name}||${row.target_date}`;
     counters[key] = (counters[key] || 0) + 1;
     if (counters[key] > limit) continue;
@@ -127,38 +102,37 @@ function getHistoryBulk(hotelNames, dates, limit = 7) {
   return result;
 }
 
-/**
- * Return the most recent scraping run reconstructed as a matrix
- * compatible with the shape returned by generateCompetitionMatrix.
- * Returns null if no data exists.
- */
-function getLatestRun() {
-  const db = getDb();
-  if (!db) return null;
+async function getLatestRun() {
+  const client = getClient();
+  if (!client) return null;
 
-  const latest = db
-    .prepare("SELECT scraped_at FROM price_history ORDER BY scraped_at DESC LIMIT 1")
-    .get();
-  if (!latest) return null;
+  const latestRs = await client.execute(
+    "SELECT scraped_at FROM price_history ORDER BY scraped_at DESC LIMIT 1",
+  );
+  if (!latestRs.rows.length) return null;
+  const scrapedAt = latestRs.rows[0].scraped_at;
 
-  const rows = db
-    .prepare(
-      `SELECT hotel_name, hotel_url, target_date, price, error
-       FROM price_history
-       WHERE scraped_at = ?
-       ORDER BY hotel_name, target_date`,
-    )
-    .all(latest.scraped_at);
+  const rs = await client.execute({
+    sql: `SELECT hotel_name, hotel_url, target_date, price, error
+          FROM price_history
+          WHERE scraped_at = ?
+          ORDER BY hotel_name, target_date`,
+    args: [scrapedAt],
+  });
 
-  if (!rows.length) return null;
+  if (!rs.rows.length) return null;
 
   const datesSet = new Set();
   const hotelsMap = new Map();
 
-  for (const row of rows) {
+  for (const row of rs.rows) {
     datesSet.add(row.target_date);
     if (!hotelsMap.has(row.hotel_name)) {
-      hotelsMap.set(row.hotel_name, { name: row.hotel_name, url: row.hotel_url, pricesMap: {} });
+      hotelsMap.set(row.hotel_name, {
+        name: row.hotel_name,
+        url: row.hotel_url,
+        pricesMap: {},
+      });
     }
     hotelsMap.get(row.hotel_name).pricesMap[row.target_date] = {
       date: row.target_date,
@@ -172,10 +146,12 @@ function getLatestRun() {
   const hotels = [...hotelsMap.values()].map((h) => ({
     name: h.name,
     url: h.url,
-    prices: dates.map((d) => h.pricesMap[d] || { date: d, price: null, currency: "EUR", error: null }),
+    prices: dates.map(
+      (d) => h.pricesMap[d] || { date: d, price: null, currency: "EUR", error: null },
+    ),
   }));
 
-  return { dates, stayNights: 1, hotels, scrapedAt: latest.scraped_at };
+  return { dates, stayNights: 1, hotels, scrapedAt };
 }
 
 module.exports = { initDb, saveScrapingRun, getHistoryBulk, getLatestRun };

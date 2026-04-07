@@ -13,3 +13,6 @@ Thumbs.db
 
 # Base de datos SQLite de historial de precios
 server/data/
+
+# Variables de entorno
+.env

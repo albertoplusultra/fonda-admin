@@ -218,9 +218,9 @@ async function generateCompetitionMatrix({ hotels, days = 15, startDate }) {
   const result = { dates, stayNights: 1, hotels: hotelResults };
 
   try {
-    saveScrapingRun(new Date().toISOString(), hotelResults, dates);
+    await saveScrapingRun(new Date().toISOString(), hotelResults, dates);
   } catch (err) {
-    console.error("Error guardando historial en SQLite:", err);
+    console.error("Error guardando historial en Turso:", err);
   }
 
   return result;
