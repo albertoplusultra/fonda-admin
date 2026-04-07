@@ -10,3 +10,6 @@ curl_headers.txt
 .DS_Store
 Thumbs.db
 .vercel/
+
+# Base de datos SQLite de historial de precios
+server/data/

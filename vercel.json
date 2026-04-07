@@ -2,9 +2,15 @@
   "version": 2,
   "functions": {
     "api/index.js": {
-      "maxDuration": 60
+      "maxDuration": 300
     }
   },
+  "crons": [
+    {
+      "path": "/api/cron/scrape",
+      "schedule": "0 5 * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/static/(.*)",

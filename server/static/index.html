@@ -84,11 +84,23 @@
       text-align: left;
       padding: 0.15rem 0;
       font-weight: 400;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .sidebar-item:hover {
+      color: var(--accent-hover);
     }
 
     .sidebar-item.active {
       color: #152133;
       font-weight: 500;
+    }
+
+    .view.hidden {
+      display: none;
     }
 
 
@@ -108,6 +120,10 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 2rem;
+    }
+
+    .card.card-wide {
+      max-width: 1200px;
     }
 
     .card-title {
@@ -269,6 +285,170 @@
       border: 1px solid #f0cfcf;
     }
 
+    .form-group {
+      margin-bottom: 1.1rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.02em;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="url"],
+    .form-group input[type="date"] {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      color: var(--text);
+      background: #fff;
+    }
+
+    .form-group textarea {
+      width: 100%;
+      min-height: 220px;
+      padding: 0.65rem 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.86rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      color: var(--text);
+      background: #fff;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(176, 140, 82, 0.2);
+    }
+
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(176, 140, 82, 0.2);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    @media (max-width: 520px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .table-wrap {
+      margin-top: 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: auto;
+      max-width: 100%;
+      background: #fff;
+    }
+
+    .prices-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 980px;
+      font-size: 0.8rem;
+    }
+
+    .prices-table th,
+    .prices-table td {
+      border-bottom: 1px solid #edf1f6;
+      border-right: 1px solid #edf1f6;
+      padding: 0.5rem 0.55rem;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .prices-table th:last-child,
+    .prices-table td:last-child {
+      border-right: none;
+    }
+
+    .prices-table thead th {
+      position: sticky;
+      top: 0;
+      background: #f8f9fb;
+      z-index: 1;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .prices-table .hotel-cell {
+      text-align: left;
+      font-weight: 600;
+      color: #1f2937;
+      background: #fcfcfd;
+      min-width: 260px;
+      white-space: normal;
+    }
+
+    .prices-table .price-empty {
+      color: #94a3b8;
+    }
+
+    .prices-table td[data-history] {
+      cursor: default;
+      position: relative;
+    }
+
+    .price-tip {
+      position: fixed;
+      z-index: 9999;
+      pointer-events: none;
+      background: #1e293b;
+      color: #f1f5f9;
+      border-radius: 6px;
+      padding: 0;
+      font-size: 0.72rem;
+      box-shadow: 0 4px 14px rgba(0,0,0,.25);
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .price-tip table {
+      border-collapse: collapse;
+    }
+
+    .price-tip th,
+    .price-tip td {
+      padding: 0.25rem 0.5rem;
+      text-align: center;
+      border: none;
+    }
+
+    .price-tip thead th {
+      background: #334155;
+      color: #94a3b8;
+      font-weight: 500;
+      font-size: 0.68rem;
+      border-bottom: 1px solid #475569;
+    }
+
+    .price-tip tbody td {
+      font-weight: 600;
+      color: #e2e8f0;
+      border-right: 1px solid #334155;
+    }
+
+    .price-tip tbody td:last-child {
+      border-right: none;
+    }
+
     footer {
       margin-top: auto;
       padding: 1.5rem;
@@ -300,15 +480,19 @@
   <aside class="sidebar">
     <p class="sidebar-title">Administración</p>
     <nav class="sidebar-nav">
-      <div class="sidebar-item active">
-        <span>Crear cartas de bienvenida</span>
-      </div>
+      <button type="button" class="sidebar-item active" data-nav="cartas" aria-current="page">
+        Crear cartas de bienvenida
+      </button>
+      <button type="button" class="sidebar-item" data-nav="competencia">
+        Precios competencia
+      </button>
     </nav>
   </aside>
 
   <main>
+    <section class="view view--cartas" id="view-cartas" aria-labelledby="title-cartas" aria-hidden="false">
     <div class="card">
-      <h2 class="card-title">Crear cartas de bienvenida</h2>
+      <h2 class="card-title" id="title-cartas">Crear cartas de bienvenida</h2>
       <p class="card-desc">
         Sube el excel que has exportado de Prestige PMS.
         Se generará un PDF personalizado por cada huésped y se descargará como ZIP.
@@ -334,12 +518,78 @@
 
       <div class="status-msg" id="statusMsg"></div>
     </div>
+    </section>
+
+    <section class="view view--competencia hidden" id="view-competencia" aria-labelledby="title-competencia" aria-hidden="true">
+    <div class="card card-wide">
+      <h2 class="card-title" id="title-competencia">Precios competencia</h2>
+
+      <div id="pricesTableWrap" class="table-wrap" style="display:none"></div>
+      <div class="status-msg" id="scrapeStatusMsg"></div>
+
+      <details style="margin-top:1.25rem">
+        <summary style="cursor:pointer;font-size:0.85rem;color:var(--text-muted);font-weight:500">Hoteles a analizar</summary>
+        <div class="form-group" style="margin-top:0.75rem">
+          <textarea id="competitorsInput" spellcheck="false"></textarea>
+        </div>
+      </details>
+
+      <div class="actions" style="margin-top:0.75rem">
+        <button class="btn btn-primary" id="scrapeBtn" type="button">
+          <span id="scrapeBtnText">Actualizar tabla</span>
+        </button>
+      </div>
+    </div>
+    </section>
   </main>
 </div>
 
 <footer>Fonda de los Príncipes &copy; 2026</footer>
 
 <script>
+  const viewCartas = document.getElementById('view-cartas');
+  const viewCompetencia = document.getElementById('view-competencia');
+  const navButtons = document.querySelectorAll('.sidebar-item[data-nav]');
+
+  function showView(name, { updateHash = true } = {}) {
+    const isCartas = name === 'cartas';
+    viewCartas.classList.toggle('hidden', !isCartas);
+    viewCompetencia.classList.toggle('hidden', isCartas);
+    viewCartas.setAttribute('aria-hidden', isCartas ? 'false' : 'true');
+    viewCompetencia.setAttribute('aria-hidden', isCartas ? 'true' : 'false');
+
+    navButtons.forEach((btn) => {
+      const active = btn.dataset.nav === name;
+      btn.classList.toggle('active', active);
+      if (active) btn.setAttribute('aria-current', 'page');
+      else btn.removeAttribute('aria-current');
+    });
+
+    if (updateHash && window.location.hash.slice(1) !== name) {
+      window.location.hash = name;
+    }
+    document.title = name === 'competencia'
+      ? 'Precios competencia — Fonda de los Príncipes'
+      : 'Fonda de los Príncipes — Admin';
+  }
+
+  navButtons.forEach((btn) => {
+    btn.addEventListener('click', () => showView(btn.dataset.nav));
+  });
+
+  window.addEventListener('hashchange', () => {
+    const h = window.location.hash.slice(1);
+    if (h === 'competencia' || h === 'cartas') {
+      showView(h, { updateHash: false });
+    }
+  });
+
+  (function initViewFromHash() {
+    const h = window.location.hash.slice(1);
+    if (h === 'competencia') showView('competencia', { updateHash: false });
+    else showView('cartas', { updateHash: false });
+  })();
+
   const dropZone = document.getElementById('dropZone');
   const fileInput = document.getElementById('fileInput');
   const fileInfo = document.getElementById('fileInfo');
@@ -441,6 +691,317 @@
       setLoading(false);
     }
   });
+
+  const scrapeBtn = document.getElementById('scrapeBtn');
+  const scrapeBtnText = document.getElementById('scrapeBtnText');
+  const competitorsInput = document.getElementById('competitorsInput');
+  const scrapeStatusMsg = document.getElementById('scrapeStatusMsg');
+  const pricesTableWrap = document.getElementById('pricesTableWrap');
+
+  const DEFAULT_HOTELS = [
+    { name: "La Fonda de los Príncipes", url: "https://www.booking.com/hotel/es/la-fonda-de-los-principes.html" },
+    { name: "Only YOU Boutique Hotel Madrid", url: "https://www.booking.com/hotel/es/only-you-amp-lounge.html" },
+    { name: "Vincci The Mint", url: "https://www.booking.com/hotel/es/vincci-the-mint.html" },
+    { name: "Catalonia Las Cortes", url: "https://www.booking.com/hotel/es/catalonia-las-cortes.html" },
+    { name: "NH Collection Palacio de Tepa", url: "https://www.booking.com/hotel/es/nh-collection-palacio-de-tepa.html" },
+    { name: "Hotel Montera Madrid (Curio)", url: "https://www.booking.com/hotel/es/montera-madrid-curio-collection-by-hilton.html" },
+    { name: "UMusic Hotel Madrid", url: "https://www.booking.com/hotel/es/umusic-madrid.html" },
+    { name: "Pestana Plaza Mayor Madrid", url: "https://www.booking.com/hotel/es/pestana-plaza-mayor.es.html" },
+    { name: "CoolRooms Palacio de Atocha", url: "https://www.booking.com/hotel/es/coolrooms-atocha.es.html" },
+    { name: "NH Collection Madrid Gran Vía", url: "https://www.booking.com/hotel/es/nh-collection-madrid-gran-via.html" },
+  ];
+  const DEFAULT_COMPETITORS = DEFAULT_HOTELS.map((h) => `${h.name}\n${h.url}`).join('\n');
+
+  if (!competitorsInput.value.trim()) {
+    competitorsInput.value = DEFAULT_COMPETITORS;
+  }
+
+  function showScrapeStatus(msg, type) {
+    scrapeStatusMsg.textContent = msg;
+    scrapeStatusMsg.className = 'status-msg ' + type;
+    scrapeStatusMsg.style.marginTop = '1rem';
+  }
+
+  function hideScrapeStatus() {
+    scrapeStatusMsg.className = 'status-msg';
+    scrapeStatusMsg.style.marginTop = '0';
+  }
+
+  function setScrapeLoading(loading) {
+    scrapeBtn.disabled = loading;
+    if (loading) {
+      scrapeBtnText.innerHTML = '<span class="spinner"></span> Consultando…';
+    } else {
+      scrapeBtnText.textContent = 'Actualizar tabla';
+    }
+  }
+
+  function parseCompetitors(raw) {
+    const lines = raw
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
+
+    const hotels = [];
+    let pendingName = '';
+    for (const line of lines) {
+      if (/^https?:\/\//i.test(line)) {
+        if (!pendingName) {
+          pendingName = new URL(line).pathname.split('/').filter(Boolean).pop() || 'Hotel';
+        }
+        hotels.push({ name: pendingName, url: line });
+        pendingName = '';
+      } else {
+        pendingName = line;
+      }
+    }
+    return hotels;
+  }
+
+  function escapeHtml(value) {
+    return String(value)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;');
+  }
+
+  function formatDateShort(isoDate) {
+    const d = new Date(isoDate + 'T00:00:00');
+    return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+  }
+
+  function formatPrice(value) {
+    if (typeof value !== 'number' || Number.isNaN(value)) return '—';
+    return new Intl.NumberFormat('es-ES', {
+      style: 'currency',
+      currency: 'EUR',
+      maximumFractionDigits: 0,
+    }).format(value);
+  }
+
+  const FONDA_NAME = 'La Fonda de los Príncipes';
+
+  function renderPricesTable(matrix) {
+    const head = matrix.dates
+      .map((d) => `<th>${escapeHtml(formatDateShort(d))}</th>`)
+      .join('');
+
+    const sortedIndices = matrix.hotels
+      .map((_, i) => i)
+      .sort((a, b) => {
+        const aFonda = matrix.hotels[a].name === FONDA_NAME ? 0 : 1;
+        const bFonda = matrix.hotels[b].name === FONDA_NAME ? 0 : 1;
+        return aFonda - bFonda;
+      });
+
+    const rows = sortedIndices
+      .map((hIdx) => {
+        const hotel = matrix.hotels[hIdx];
+        const cells = hotel.prices
+          .map((entry, dIdx) => {
+            const cls = typeof entry.price === 'number' ? '' : ' class="price-empty"';
+            const title = entry.error ? ` title="${escapeHtml(entry.error)}"` : '';
+            return `<td data-hotel="${hIdx}" data-date="${dIdx}"${cls}${title}>${escapeHtml(formatPrice(entry.price))}</td>`;
+          })
+          .join('');
+        return `<tr><td class="hotel-cell">${escapeHtml(hotel.name)}</td>${cells}</tr>`;
+      })
+      .join('');
+
+    const competitors = matrix.hotels.filter((h) => h.name !== FONDA_NAME);
+    const fonda = matrix.hotels.find((h) => h.name === FONDA_NAME);
+
+    const avgCells = matrix.dates
+      .map((_, dIdx) => {
+        const prices = competitors
+          .map((h) => h.prices[dIdx]?.price)
+          .filter((p) => typeof p === 'number');
+        if (!prices.length) return '<td class="price-empty">—</td>';
+        const avg = prices.reduce((s, v) => s + v, 0) / prices.length;
+        return `<td style="font-weight:600">${escapeHtml(formatPrice(avg))}</td>`;
+      })
+      .join('');
+
+    const diffCells = matrix.dates
+      .map((_, dIdx) => {
+        const prices = competitors
+          .map((h) => h.prices[dIdx]?.price)
+          .filter((p) => typeof p === 'number');
+        const fondaPrice = fonda?.prices[dIdx]?.price;
+        if (!prices.length || typeof fondaPrice !== 'number')
+          return '<td class="price-empty">—</td>';
+        const avg = prices.reduce((s, v) => s + v, 0) / prices.length;
+        const pct = ((fondaPrice - avg) / avg) * 100;
+        const sign = pct > 0 ? '+' : '';
+        const color = pct > 0 ? 'var(--error)' : 'var(--success)';
+        return `<td style="font-weight:600;color:${color}">${sign}${Math.round(pct)}%</td>`;
+      })
+      .join('');
+
+    const summaryRows =
+      `<tr style="border-top:2px solid var(--border)"><td class="hotel-cell" style="font-style:italic">Precio medio competencia</td>${avgCells}</tr>` +
+      `<tr><td class="hotel-cell" style="font-style:italic">Fonda vs media</td>${diffCells}</tr>`;
+
+    pricesTableWrap.innerHTML = `
+      <table class="prices-table">
+        <thead>
+          <tr>
+            <th>Hotel / Fecha (EUR por noche)</th>
+            ${head}
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+          ${summaryRows}
+        </tbody>
+      </table>
+    `;
+    pricesTableWrap.style.display = 'block';
+  }
+
+  const tipEl = document.createElement('div');
+  tipEl.className = 'price-tip';
+  tipEl.style.display = 'none';
+  document.body.appendChild(tipEl);
+
+  function showTip(cell) {
+    const html = cell.dataset.history;
+    if (!html) return;
+    tipEl.innerHTML = html;
+    tipEl.style.display = 'block';
+    positionTip(cell);
+  }
+
+  function hideTip() {
+    tipEl.style.display = 'none';
+  }
+
+  function positionTip(cell) {
+    const r = cell.getBoundingClientRect();
+    const tw = tipEl.offsetWidth;
+    const th = tipEl.offsetHeight;
+    let left = r.left + (r.width - tw) / 2;
+    let top = r.top - th - 6;
+    if (top < 4) top = r.bottom + 6;
+    if (left < 4) left = 4;
+    if (left + tw > window.innerWidth - 4) left = window.innerWidth - tw - 4;
+    tipEl.style.left = left + 'px';
+    tipEl.style.top = top + 'px';
+  }
+
+  pricesTableWrap.addEventListener('mouseenter', (e) => {
+    const cell = e.target.closest('td[data-history]');
+    if (cell) showTip(cell);
+  }, true);
+
+  pricesTableWrap.addEventListener('mouseleave', (e) => {
+    const cell = e.target.closest('td[data-history]');
+    if (cell) hideTip();
+  }, true);
+
+  pricesTableWrap.addEventListener('mouseover', (e) => {
+    const cell = e.target.closest('td[data-history]');
+    if (cell) showTip(cell);
+    else hideTip();
+  });
+
+  async function loadAndApplyHistory(matrix) {
+    try {
+      const hotelNames = matrix.hotels.map((h) => h.name);
+      const params = new URLSearchParams({
+        hotels: hotelNames.join(','),
+        dates: matrix.dates.join(','),
+      });
+      const res = await fetch(`/api/precios-competencia/historial?${params}`);
+      if (!res.ok) return;
+      const history = await res.json();
+
+      const cells = pricesTableWrap.querySelectorAll('td[data-hotel][data-date]');
+      for (const cell of cells) {
+        const hIdx = Number(cell.dataset.hotel);
+        const dIdx = Number(cell.dataset.date);
+        const hotelName = matrix.hotels[hIdx]?.name;
+        const date = matrix.dates[dIdx];
+        const entries = history[hotelName]?.[date];
+        if (!entries?.length) continue;
+
+        const headerCells = entries
+          .map((e) => {
+            const d = new Date(e.scraped_at);
+            const ds = d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+            const ts = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            return `<th>${escapeHtml(ds)} ${escapeHtml(ts)}</th>`;
+          })
+          .join('');
+
+        const valueCells = entries
+          .map((e) => {
+            const p = e.price != null ? formatPrice(e.price) : '—';
+            return `<td>${escapeHtml(p)}</td>`;
+          })
+          .join('');
+
+        cell.dataset.history =
+          `<table><thead><tr>${headerCells}</tr></thead><tbody><tr>${valueCells}</tr></tbody></table>`;
+      }
+    } catch (err) {
+      console.error('Error cargando historial:', err);
+    }
+  }
+
+  scrapeBtn.addEventListener('click', async () => {
+    hideScrapeStatus();
+    const hotels = parseCompetitors(competitorsInput.value);
+    if (!hotels.length) {
+      showScrapeStatus('Introduce al menos un hotel con su URL de Booking.com.', 'error');
+      competitorsInput.focus();
+      return;
+    }
+
+    setScrapeLoading(true);
+    try {
+      const res = await fetch('/api/precios-competencia/matriz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          hotels,
+          days: 15,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || 'No se pudo completar la solicitud.');
+      }
+      renderPricesTable(data);
+      loadAndApplyHistory(data);
+      const nights = Number(data.stayNights) || 1;
+      showScrapeStatus(`Tabla actualizada para ${hotels.length} hoteles y 15 días (estancia de ${nights} noche).`, 'success');
+    } catch (err) {
+      showScrapeStatus(err.message, 'error');
+    } finally {
+      setScrapeLoading(false);
+    }
+  });
+
+  (async function loadLastRun() {
+    try {
+      const res = await fetch('/api/precios-competencia/ultimo');
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data || !data.hotels?.length) return;
+
+      renderPricesTable(data);
+      loadAndApplyHistory(data);
+
+      const when = new Date(data.scrapedAt);
+      const dateStr = when.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const timeStr = when.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+      showScrapeStatus(`Última consulta: ${dateStr} a las ${timeStr}`, 'success');
+    } catch (err) {
+      console.error('Error cargando últimos datos:', err);
+    }
+  })();
 </script>
 
 </body>
