@@ -1,32 +1,46 @@
 const path = require("path");
 const fs = require("fs");
-const Database = require("better-sqlite3");
+
+let Database;
+try {
+  Database = require("better-sqlite3");
+} catch {
+  Database = null;
+}
 
 const DATA_DIR = path.join(__dirname, "data");
 const DB_PATH = path.join(DATA_DIR, "prices.db");
 
 let _db = null;
+let _available = !!Database;
 
 function getDb() {
+  if (!_available) return null;
   if (_db) return _db;
 
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  _db = new Database(DB_PATH);
-  _db.pragma("journal_mode = WAL");
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    _db = new Database(DB_PATH);
+    _db.pragma("journal_mode = WAL");
 
-  _db.exec(`
-    CREATE TABLE IF NOT EXISTS price_history (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      scraped_at TEXT NOT NULL,
-      hotel_name TEXT NOT NULL,
-      hotel_url TEXT NOT NULL,
-      target_date TEXT NOT NULL,
-      price REAL,
-      error TEXT
-    );
-    CREATE INDEX IF NOT EXISTS idx_hotel_date
-      ON price_history(hotel_name, target_date);
-  `);
+    _db.exec(`
+      CREATE TABLE IF NOT EXISTS price_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        scraped_at TEXT NOT NULL,
+        hotel_name TEXT NOT NULL,
+        hotel_url TEXT NOT NULL,
+        target_date TEXT NOT NULL,
+        price REAL,
+        error TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_hotel_date
+        ON price_history(hotel_name, target_date);
+    `);
+  } catch (err) {
+    console.warn("SQLite no disponible:", err.message);
+    _available = false;
+    return null;
+  }
 
   return _db;
 }
@@ -43,6 +57,7 @@ function initDb() {
  */
 function saveScrapingRun(scrapedAt, hotels, dates) {
   const db = getDb();
+  if (!db) return;
   const insert = db.prepare(`
     INSERT INTO price_history (scraped_at, hotel_name, hotel_url, target_date, price, error)
     VALUES (@scrapedAt, @hotelName, @hotelUrl, @targetDate, @price, @error)
@@ -76,6 +91,7 @@ function saveScrapingRun(scrapedAt, hotels, dates) {
  */
 function getHistoryBulk(hotelNames, dates, limit = 7) {
   const db = getDb();
+  if (!db) return {};
 
   const placeholdersH = hotelNames.map(() => "?").join(",");
   const placeholdersD = dates.map(() => "?").join(",");
@@ -118,6 +134,7 @@ function getHistoryBulk(hotelNames, dates, limit = 7) {
  */
 function getLatestRun() {
   const db = getDb();
+  if (!db) return null;
 
   const latest = db
     .prepare("SELECT scraped_at FROM price_history ORDER BY scraped_at DESC LIMIT 1")
