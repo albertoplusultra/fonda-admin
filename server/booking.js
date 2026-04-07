@@ -61,11 +61,23 @@ function safeName(v) {
 
 async function getBrowser() {
   if (!browserPromise) {
-    const puppeteer = require("puppeteer");
-    browserPromise = puppeteer.launch({
-      headless: "new",
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    const isVercel = !!process.env.VERCEL;
+    if (isVercel) {
+      const chromium = require("@sparticuz/chromium");
+      const puppeteer = require("puppeteer-core");
+      browserPromise = puppeteer.launch({
+        args: chromium.args,
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath(),
+        headless: chromium.headless,
+      });
+    } else {
+      const puppeteer = require("puppeteer");
+      browserPromise = puppeteer.launch({
+        headless: "new",
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      });
+    }
   }
   return browserPromise;
 }
