@@ -64,23 +64,24 @@ const CHROMIUM_PACK_URL =
 
 async function getBrowser() {
   if (!browserPromise) {
-    const isVercel = !!process.env.VERCEL;
-    if (isVercel) {
-      const chromium = require("@sparticuz/chromium-min");
-      const puppeteer = require("puppeteer-core");
-      browserPromise = puppeteer.launch({
-        args: chromium.args,
-        defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(CHROMIUM_PACK_URL),
-        headless: "shell",
-      });
-    } else {
+    browserPromise = (async () => {
+      if (process.env.VERCEL) {
+        const chromium = require("@sparticuz/chromium-min");
+        const puppeteer = require("puppeteer-core");
+        const execPath = await chromium.executablePath(CHROMIUM_PACK_URL);
+        return puppeteer.launch({
+          args: chromium.args,
+          defaultViewport: chromium.defaultViewport,
+          executablePath: execPath,
+          headless: "shell",
+        });
+      }
       const puppeteer = require("puppeteer");
-      browserPromise = puppeteer.launch({
+      return puppeteer.launch({
         headless: "new",
         args: ["--no-sandbox", "--disable-setuid-sandbox"],
       });
-    }
+    })();
   }
   return browserPromise;
 }
