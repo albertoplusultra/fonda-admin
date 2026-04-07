@@ -69,6 +69,8 @@ app.post("/api/precios-competencia/matriz", async (req, res) => {
     return res.status(200).json(matrix);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Error inesperado";
+    const stack = error instanceof Error ? error.stack : "";
+    console.error("Error en /api/precios-competencia/matriz:", message, stack);
     return res.status(422).json({ error: message });
   }
 });

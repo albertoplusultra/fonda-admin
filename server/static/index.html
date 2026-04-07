@@ -969,9 +969,12 @@
           days: 15,
         }),
       });
-      const data = await res.json().catch(() => ({}));
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { data = {}; }
       if (!res.ok) {
-        throw new Error(data.error || 'No se pudo completar la solicitud.');
+        const detail = data.error || `HTTP ${res.status}: ${text.slice(0, 200)}`;
+        throw new Error(detail);
       }
       renderPricesTable(data);
       loadAndApplyHistory(data);
