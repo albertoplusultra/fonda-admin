@@ -931,7 +931,7 @@
 
         const byDay = new Map();
         for (const e of entries) {
-          const dayKey = e.scraped_at.slice(0, 10);
+          const dayKey = new Date(e.scraped_at).toLocaleDateString('en-CA', { timeZone: 'Europe/Madrid' });
           if (!byDay.has(dayKey)) byDay.set(dayKey, e);
         }
         const unique = [...byDay.values()].reverse();
