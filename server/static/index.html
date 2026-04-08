@@ -1086,19 +1086,36 @@
 
   (async function loadLastRun() {
     try {
+      const days = 15;
+      const dates = generateDates(days);
+      const allHotels = parseCompetitors(competitorsInput.value);
+      if (!allHotels.length) return;
+
+      currentMatrix = buildSkeletonMatrix(allHotels, dates);
+
       const res = await fetch('/api/precios-competencia/ultimo');
-      if (!res.ok) return;
-      const data = await res.json();
-      if (!data || !data.hotels?.length) return;
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.hotels?.length) {
+          for (const h of data.hotels) {
+            const target = currentMatrix.hotels.find((mh) => mh.name === h.name);
+            if (!target) continue;
+            for (let i = 0; i < dates.length; i++) {
+              const srcEntry = h.prices?.find((p) => p.date === dates[i]);
+              if (srcEntry && srcEntry.price != null) target.prices[i] = srcEntry;
+            }
+          }
+          if (data.scrapedAt) {
+            const when = new Date(data.scrapedAt);
+            const dateStr = when.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const timeStr = when.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            showScrapeStatus(`Última consulta: ${dateStr} a las ${timeStr}`, 'success');
+          }
+        }
+      }
 
-      currentMatrix = data;
-      renderPricesTable(data);
-      loadAndApplyHistory(data);
-
-      const when = new Date(data.scrapedAt);
-      const dateStr = when.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      const timeStr = when.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-      showScrapeStatus(`Última consulta: ${dateStr} a las ${timeStr}`, 'success');
+      renderPricesTable(currentMatrix);
+      loadAndApplyHistory(currentMatrix);
     } catch (err) {
       console.error('Error cargando últimos datos:', err);
     }
