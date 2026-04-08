@@ -800,9 +800,12 @@
         const hotel = matrix.hotels[hIdx];
         const cells = hotel.prices
           .map((entry, dIdx) => {
-            const cls = typeof entry.price === 'number' ? '' : ' class="price-empty"';
+            const hasPrice = typeof entry.price === 'number';
+            const isPending = !hasPrice && !entry.error;
+            const cls = hasPrice ? '' : ' class="price-empty"';
             const title = entry.error ? ` title="${escapeHtml(entry.error)}"` : '';
-            return `<td data-hotel="${hIdx}" data-date="${dIdx}"${cls}${title}>${escapeHtml(formatPrice(entry.price))}</td>`;
+            const display = hasPrice ? escapeHtml(formatPrice(entry.price)) : isPending ? '…' : '—';
+            return `<td data-hotel="${hIdx}" data-date="${dIdx}"${cls}${title}>${display}</td>`;
           })
           .join('');
         return `<tr><td class="hotel-cell">${escapeHtml(hotel.name)}</td>${cells}</tr>`;
@@ -950,63 +953,135 @@
     }
   }
 
-  const BATCH_SIZE = 2;
+  let currentMatrix = null;
 
-  async function fetchBatch(hotelsBatch, days) {
+  function generateDates(days) {
+    const dates = [];
+    const now = new Date();
+    for (let i = 0; i < days; i++) {
+      const d = new Date(now);
+      d.setDate(d.getDate() + i);
+      dates.push(d.toISOString().slice(0, 10));
+    }
+    return dates;
+  }
+
+  function buildSkeletonMatrix(hotels, dates) {
+    return {
+      dates,
+      stayNights: 1,
+      hotels: hotels.map((h) => ({
+        name: h.name,
+        url: h.url,
+        prices: dates.map((d) => ({ date: d, price: null, currency: 'EUR', error: null })),
+      })),
+    };
+  }
+
+  function updateHotelRow(matrix, hotelName, pricesData) {
+    const hotel = matrix.hotels.find((h) => h.name === hotelName);
+    if (!hotel || !pricesData?.hotels?.[0]) return;
+    const src = pricesData.hotels[0];
+    for (let i = 0; i < matrix.dates.length; i++) {
+      const entry = src.prices[i];
+      if (entry) hotel.prices[i] = entry;
+    }
+  }
+
+  async function scrapeOneHotel(hotel, days) {
     const res = await fetch('/api/precios-competencia/matriz', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hotels: hotelsBatch, days }),
+      body: JSON.stringify({ hotels: [hotel], days }),
     });
     const text = await res.text();
     let data;
     try { data = JSON.parse(text); } catch { data = {}; }
-    if (!res.ok) {
-      throw new Error(data.error || `HTTP ${res.status}: ${text.slice(0, 200)}`);
-    }
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}: ${text.slice(0, 200)}`);
     return data;
   }
 
   scrapeBtn.addEventListener('click', async () => {
     hideScrapeStatus();
-    const hotels = parseCompetitors(competitorsInput.value);
-    if (!hotels.length) {
+    const allHotels = parseCompetitors(competitorsInput.value);
+    if (!allHotels.length) {
       showScrapeStatus('Introduce al menos un hotel con su URL de Booking.com.', 'error');
       competitorsInput.focus();
       return;
     }
 
     setScrapeLoading(true);
-    let merged = null;
-    let processed = 0;
+    const days = 15;
+    const dates = generateDates(days);
+
+    let pendingNames;
     try {
-      for (let i = 0; i < hotels.length; i += BATCH_SIZE) {
-        const batch = hotels.slice(i, i + BATCH_SIZE);
-        showScrapeStatus(`Consultando hoteles ${i + 1}–${Math.min(i + BATCH_SIZE, hotels.length)} de ${hotels.length}…`, 'success');
-        const data = await fetchBatch(batch, 15);
+      const pRes = await fetch('/api/precios-competencia/pendientes');
+      if (pRes.ok) {
+        const pData = await pRes.json();
+        pendingNames = new Set(pData.pending.map((h) => h.name));
+      }
+    } catch {}
+    if (!pendingNames) pendingNames = new Set(allHotels.map((h) => h.name));
 
-        if (!merged) {
-          merged = data;
-        } else {
-          merged.hotels.push(...data.hotels);
+    if (!currentMatrix || currentMatrix.dates.join() !== dates.join()) {
+      currentMatrix = buildSkeletonMatrix(allHotels, dates);
+      try {
+        const lastRes = await fetch('/api/precios-competencia/ultimo');
+        if (lastRes.ok) {
+          const lastData = await lastRes.json();
+          if (lastData?.hotels?.length) {
+            for (const h of lastData.hotels) {
+              const target = currentMatrix.hotels.find((mh) => mh.name === h.name);
+              if (!target) continue;
+              for (let i = 0; i < dates.length; i++) {
+                const srcEntry = h.prices?.find((p) => p.date === dates[i]);
+                if (srcEntry && srcEntry.price != null) target.prices[i] = srcEntry;
+              }
+            }
+          }
         }
-        processed += batch.length;
-
-        renderPricesTable(merged);
-      }
-
-      loadAndApplyHistory(merged);
-      showScrapeStatus(`Tabla actualizada: ${processed} hoteles, 15 días.`, 'success');
-    } catch (err) {
-      if (merged && merged.hotels.length) {
-        renderPricesTable(merged);
-        showScrapeStatus(`Error en lote (${processed} de ${hotels.length} completados): ${err.message}`, 'error');
-      } else {
-        showScrapeStatus(err.message, 'error');
-      }
-    } finally {
-      setScrapeLoading(false);
+      } catch {}
     }
+
+    renderPricesTable(currentMatrix);
+
+    const pending = allHotels.filter((h) => pendingNames.has(h.name));
+    if (!pending.length) {
+      showScrapeStatus('Todos los hoteles ya están actualizados hoy.', 'success');
+      loadAndApplyHistory(currentMatrix);
+      setScrapeLoading(false);
+      return;
+    }
+
+    let completed = 0;
+    let errors = 0;
+    for (const hotel of pending) {
+      completed++;
+      showScrapeStatus(`Hotel ${completed} de ${pending.length}: ${hotel.name}…`, 'success');
+      try {
+        const data = await scrapeOneHotel(hotel, days);
+        updateHotelRow(currentMatrix, hotel.name, data);
+      } catch (err) {
+        errors++;
+        console.error(`Error scraping ${hotel.name}:`, err);
+        const target = currentMatrix.hotels.find((h) => h.name === hotel.name);
+        if (target) {
+          for (const p of target.prices) {
+            if (!p.price && !p.error) p.error = err.message;
+          }
+        }
+      }
+      renderPricesTable(currentMatrix);
+    }
+
+    loadAndApplyHistory(currentMatrix);
+    if (errors) {
+      showScrapeStatus(`Completado con ${errors} error(es) de ${pending.length} hoteles.`, 'error');
+    } else {
+      showScrapeStatus(`Tabla actualizada: ${allHotels.length} hoteles, ${days} días.`, 'success');
+    }
+    setScrapeLoading(false);
   });
 
   (async function loadLastRun() {
@@ -1016,6 +1091,7 @@
       const data = await res.json();
       if (!data || !data.hotels?.length) return;
 
+      currentMatrix = data;
       renderPricesTable(data);
       loadAndApplyHistory(data);
 

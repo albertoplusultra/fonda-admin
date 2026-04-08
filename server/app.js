@@ -4,7 +4,7 @@ const multer = require("multer");
 
 const { generateCartasZip } = require("./cartas");
 const { generateCompetitionMatrix } = require("./booking");
-const { initDb, getHistoryBulk, getLatestRun } = require("./db");
+const { initDb, getHistoryBulk, getLatestRun, getScrapedHotelsToday } = require("./db");
 const { DEFAULT_HOTELS } = require("./competitors");
 
 const app = express();
@@ -112,6 +112,18 @@ app.get("/api/precios-competencia/historial", async (req, res) => {
   }
 });
 
+app.get("/api/precios-competencia/pendientes", async (_req, res) => {
+  try {
+    const done = await getScrapedHotelsToday();
+    const pending = DEFAULT_HOTELS.filter((h) => !done.has(h.name));
+    return res.json({ pending, done: DEFAULT_HOTELS.filter((h) => done.has(h.name)) });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Error inesperado";
+    console.error("Error obteniendo pendientes:", error);
+    return res.status(500).json({ error: message });
+  }
+});
+
 app.get("/api/cron/scrape", async (req, res) => {
   const secret = process.env.CRON_SECRET;
   if (secret) {
@@ -123,14 +135,29 @@ app.get("/api/cron/scrape", async (req, res) => {
 
   try {
     console.log("[cron] Inicio scraping automático…");
-    const matrix = await generateCompetitionMatrix({
-      hotels: DEFAULT_HOTELS,
-      days: 15,
-    });
-    const count = matrix.hotels.length;
-    const dates = matrix.dates.length;
-    console.log(`[cron] Scraping completado: ${count} hoteles, ${dates} fechas.`);
-    return res.json({ ok: true, hotels: count, dates, scrapedAt: new Date().toISOString() });
+    const done = await getScrapedHotelsToday();
+    const pending = DEFAULT_HOTELS.filter((h) => !done.has(h.name));
+    if (!pending.length) {
+      console.log("[cron] Todos los hoteles ya scrapeados hoy.");
+      return res.json({ ok: true, hotels: 0, message: "Ya scrapeados hoy." });
+    }
+
+    const results = [];
+    for (const hotel of pending) {
+      try {
+        console.log(`[cron] Scraping ${hotel.name}…`);
+        await generateCompetitionMatrix({ hotels: [hotel], days: 15 });
+        results.push({ hotel: hotel.name, ok: true });
+      } catch (err) {
+        console.error(`[cron] Error en ${hotel.name}:`, err);
+        results.push({ hotel: hotel.name, ok: false, error: err.message });
+      }
+    }
+
+    const ok = results.filter((r) => r.ok).length;
+    const failed = results.filter((r) => !r.ok).length;
+    console.log(`[cron] Completado: ${ok} ok, ${failed} errores.`);
+    return res.json({ ok: true, hotels: ok, failed, results, scrapedAt: new Date().toISOString() });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Error inesperado";
     console.error("[cron] Error en scraping automático:", error);

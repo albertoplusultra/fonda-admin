@@ -154,4 +154,23 @@ async function getLatestRun() {
   return { dates, stayNights: 1, hotels, scrapedAt };
 }
 
-module.exports = { initDb, saveScrapingRun, getHistoryBulk, getLatestRun };
+/**
+ * Return the set of hotel names that have been scraped today (Madrid timezone).
+ */
+async function getScrapedHotelsToday() {
+  const client = getClient();
+  if (!client) return new Set();
+
+  const now = new Date();
+  const madridDate = now.toLocaleDateString("en-CA", { timeZone: "Europe/Madrid" });
+  const todayStart = `${madridDate}T00:00:00`;
+
+  const rs = await client.execute({
+    sql: "SELECT DISTINCT hotel_name FROM price_history WHERE scraped_at >= ?",
+    args: [todayStart],
+  });
+
+  return new Set(rs.rows.map((r) => r.hotel_name));
+}
+
+module.exports = { initDb, saveScrapingRun, getHistoryBulk, getLatestRun, getScrapedHotelsToday };
