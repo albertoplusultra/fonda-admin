@@ -106,27 +106,28 @@ async function getLatestRun() {
   const client = getClient();
   if (!client) return null;
 
-  const latestRs = await client.execute(
-    "SELECT scraped_at FROM price_history ORDER BY scraped_at DESC LIMIT 1",
+  const rs = await client.execute(
+    `SELECT p.hotel_name, p.hotel_url, p.target_date, p.price, p.error, p.scraped_at
+     FROM price_history p
+     INNER JOIN (
+       SELECT hotel_name, target_date, MAX(scraped_at) AS max_at
+       FROM price_history
+       GROUP BY hotel_name, target_date
+     ) latest ON p.hotel_name = latest.hotel_name
+            AND p.target_date = latest.target_date
+            AND p.scraped_at = latest.max_at
+     ORDER BY p.hotel_name, p.target_date`,
   );
-  if (!latestRs.rows.length) return null;
-  const scrapedAt = latestRs.rows[0].scraped_at;
-
-  const rs = await client.execute({
-    sql: `SELECT hotel_name, hotel_url, target_date, price, error
-          FROM price_history
-          WHERE scraped_at = ?
-          ORDER BY hotel_name, target_date`,
-    args: [scrapedAt],
-  });
 
   if (!rs.rows.length) return null;
 
   const datesSet = new Set();
   const hotelsMap = new Map();
+  let maxScrapedAt = "";
 
   for (const row of rs.rows) {
     datesSet.add(row.target_date);
+    if (row.scraped_at > maxScrapedAt) maxScrapedAt = row.scraped_at;
     if (!hotelsMap.has(row.hotel_name)) {
       hotelsMap.set(row.hotel_name, {
         name: row.hotel_name,
@@ -151,7 +152,7 @@ async function getLatestRun() {
     ),
   }));
 
-  return { dates, stayNights: 1, hotels, scrapedAt };
+  return { dates, stayNights: 1, hotels, scrapedAt: maxScrapedAt };
 }
 
 /**
