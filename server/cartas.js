@@ -86,16 +86,19 @@ function resolveLogoPath() {
   throw new Error("No se encontró el logotipo en server/assets.");
 }
 
+const CHROMIUM_PACK_URL =
+  "https://github.com/Sparticuz/chromium/releases/download/v143.0.4/chromium-v143.0.4-pack.x64.tar";
+
 async function launchBrowser() {
-  // En Vercel usamos chromium serverless; en local usamos puppeteer completo.
   if (process.env.VERCEL) {
     const puppeteerCore = require("puppeteer-core");
-    const chromium = require("@sparticuz/chromium");
+    const chromium = require("@sparticuz/chromium-min");
 
     return puppeteerCore.launch({
       args: chromium.args,
-      executablePath: await chromium.executablePath(),
-      headless: true,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(CHROMIUM_PACK_URL),
+      headless: "shell",
     });
   }
 
