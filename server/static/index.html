@@ -929,7 +929,15 @@
         const entries = history[hotelName]?.[date];
         if (!entries?.length) continue;
 
-        const headerCells = entries
+        const byDay = new Map();
+        for (const e of entries) {
+          const dayKey = e.scraped_at.slice(0, 10);
+          if (!byDay.has(dayKey)) byDay.set(dayKey, e);
+        }
+        const unique = [...byDay.values()].reverse();
+        if (!unique.length) continue;
+
+        const headerCells = unique
           .map((e) => {
             const d = new Date(e.scraped_at);
             const ds = d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
@@ -938,7 +946,7 @@
           })
           .join('');
 
-        const valueCells = entries
+        const valueCells = unique
           .map((e) => {
             const p = e.price != null ? formatPrice(e.price) : '—';
             return `<td>${escapeHtml(p)}</td>`;
