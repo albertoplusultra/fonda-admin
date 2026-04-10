@@ -22,7 +22,7 @@
     }
 
     body {
-      font-family: "Brown", "Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
+      font-family: "Brown LL", "Brown", "Segoe UI", "Avenir Next", system-ui, -apple-system, sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
@@ -58,12 +58,52 @@
       background: transparent;
       border-right: 1px solid #e5e9f0;
       padding: 1.1rem 0.9rem;
+      position: relative;
+      overflow: visible;
+      transition: width 0.2s ease, padding 0.2s ease;
+    }
+
+    .sidebar-toggle {
+      position: absolute;
+      top: 0.9rem;
+      right: 4px;
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      border: 1px solid #cfd7e3;
+      background: #fff;
+      color: #334155;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.95rem;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+      z-index: 3;
+    }
+
+    .sidebar-toggle:hover {
+      background: #f8fafc;
+    }
+
+    .app-layout.sidebar-collapsed .sidebar {
+      width: 34px;
+      padding: 0.9rem 0.2rem;
+    }
+
+    .app-layout.sidebar-collapsed .sidebar-title,
+    .app-layout.sidebar-collapsed .sidebar-nav {
+      display: none;
+    }
+
+    .app-layout.sidebar-collapsed main {
+      padding: 1.25rem 0.75rem;
     }
 
     .sidebar-title {
       font-size: 0.7rem;
       font-weight: 600;
-      text-transform: uppercase;
       letter-spacing: 0.12em;
       color: #6b7280;
       margin: 0 0.55rem 0.55rem;
@@ -103,6 +143,10 @@
       display: none;
     }
 
+    .view {
+      width: 100%;
+    }
+
 
     main {
       width: 100%;
@@ -126,13 +170,20 @@
       max-width: 1200px;
     }
 
+    .card-flat {
+      max-width: none;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      padding: 0;
+    }
+
     .card-title {
       color: var(--text);
       font-size: 1.2rem;
       font-weight: 600;
       letter-spacing: 0.02em;
       margin-bottom: 0.5rem;
-      text-transform: uppercase;
     }
 
     .card-desc {
@@ -237,8 +288,7 @@
     .btn-primary {
       background: var(--text);
       color: var(--bg);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
+      letter-spacing: 0.01em;
     }
 
     .btn-primary:hover:not(:disabled) {
@@ -361,8 +411,15 @@
     .prices-table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 980px;
+      min-width: 920px;
       font-size: 0.8rem;
+      font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .app-layout.sidebar-collapsed .prices-table {
+      min-width: 860px;
+      font-size: 0.9rem;
     }
 
     .prices-table th,
@@ -393,7 +450,7 @@
       font-weight: 600;
       color: #1f2937;
       background: #fcfcfd;
-      min-width: 260px;
+      min-width: 210px;
       white-space: normal;
     }
 
@@ -404,6 +461,18 @@
     .prices-table td[data-history] {
       cursor: default;
       position: relative;
+    }
+
+    .prices-table tbody td:not(.hotel-cell) {
+      font-weight: 700;
+    }
+
+    .prices-table .summary-separator td {
+      border-top: 1px solid #c8d0db !important;
+    }
+
+    .prices-table .summary-divider td {
+      border-bottom: 2px solid #c3ccd8 !important;
     }
 
     .price-tip {
@@ -449,6 +518,66 @@
       border-right: none;
     }
 
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 10000;
+    }
+
+    .modal-overlay.visible {
+      display: flex;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 460px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 16px 44px rgba(15, 23, 42, 0.24);
+      padding: 1.1rem 1.1rem 1rem;
+    }
+
+    .modal-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    .modal-desc {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 1rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 0.6rem;
+      justify-content: flex-end;
+    }
+
+    .btn-secondary {
+      background: #eef2f7;
+      color: #334155;
+      border: 1px solid #d7dee8;
+      border-radius: 8px;
+      padding: 0.6rem 0.85rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-secondary:hover {
+      background: #e6ebf3;
+    }
+
     footer {
       margin-top: auto;
       padding: 1.5rem;
@@ -467,6 +596,20 @@
         border-right: none;
         border-bottom: 1px solid var(--border);
       }
+
+      .sidebar-toggle {
+        display: none;
+      }
+
+      .app-layout.sidebar-collapsed .sidebar {
+        width: 100%;
+        padding: 1.1rem 0.9rem;
+      }
+
+      .app-layout.sidebar-collapsed .sidebar-title,
+      .app-layout.sidebar-collapsed .sidebar-nav {
+        display: block;
+      }
     }
   </style>
 </head>
@@ -478,6 +621,7 @@
 
 <div class="app-layout">
   <aside class="sidebar">
+    <button type="button" class="sidebar-toggle" id="sidebarToggleBtn" aria-label="Plegar menú" title="Plegar menú">↔</button>
     <p class="sidebar-title">Administración</p>
     <nav class="sidebar-nav">
       <button type="button" class="sidebar-item active" data-nav="cartas" aria-current="page">
@@ -521,24 +665,19 @@
     </section>
 
     <section class="view view--competencia hidden" id="view-competencia" aria-labelledby="title-competencia" aria-hidden="true">
-    <div class="card card-wide">
+    <div class="card card-wide card-flat">
       <h2 class="card-title" id="title-competencia">Precios competencia</h2>
+      <p id="lastUpdateInfo" class="card-desc" style="margin-bottom:0.5rem">Última actualización: —</p>
 
       <div id="pricesTableWrap" class="table-wrap" style="display:none"></div>
       <div class="status-msg" id="scrapeStatusMsg"></div>
 
-      <details style="margin-top:1.25rem">
-        <summary style="cursor:pointer;font-size:0.85rem;color:var(--text-muted);font-weight:500">Hoteles a analizar</summary>
-        <div class="form-group" style="margin-top:0.75rem">
-          <textarea id="competitorsInput" spellcheck="false"></textarea>
-        </div>
-      </details>
-
-      <div class="actions" style="margin-top:0.75rem">
-        <button class="btn btn-primary" id="scrapeBtn" type="button">
-          <span id="scrapeBtnText">Actualizar tabla</span>
+      <div class="actions" style="margin-top:0.75rem;justify-content:center">
+        <button class="btn btn-primary" id="scrapeBtn" type="button" style="flex:0 0 auto;min-width:170px;width:auto;padding:0.75rem 1rem;white-space:nowrap">
+          <span id="scrapeBtnText">Actualizar precios</span>
         </button>
       </div>
+
     </div>
     </section>
   </main>
@@ -546,10 +685,46 @@
 
 <footer>Fonda de los Príncipes &copy; 2026</footer>
 
+<div id="confirmModal" class="modal-overlay" aria-hidden="true">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle" aria-describedby="confirmModalDesc">
+    <h3 id="confirmModalTitle" class="modal-title">Los precios ya están actualizados</h3>
+    <p id="confirmModalDesc" class="modal-desc">
+      Los precios ya se han actualizado hoy. Si continúas, se volverán a consultar todos los hoteles.
+    </p>
+    <div class="modal-actions">
+      <button type="button" id="confirmModalCancel" class="btn-secondary">Cancelar</button>
+      <button type="button" id="confirmModalAccept" class="btn btn-primary" style="flex:0;padding:0.6rem 0.95rem">Volver a actualizar</button>
+    </div>
+  </div>
+</div>
+
 <script>
+  const appLayout = document.querySelector('.app-layout');
+  const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
   const viewCartas = document.getElementById('view-cartas');
   const viewCompetencia = document.getElementById('view-competencia');
   const navButtons = document.querySelectorAll('.sidebar-item[data-nav]');
+
+  function setSidebarCollapsed(collapsed) {
+    appLayout.classList.toggle('sidebar-collapsed', collapsed);
+    sidebarToggleBtn.textContent = collapsed ? '↔' : '←';
+    sidebarToggleBtn.setAttribute('aria-label', collapsed ? 'Desplegar menú' : 'Plegar menú');
+    sidebarToggleBtn.setAttribute('title', collapsed ? 'Desplegar menú' : 'Plegar menú');
+    try { localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0'); } catch {}
+  }
+
+  sidebarToggleBtn.addEventListener('click', () => {
+    if (window.innerWidth <= 900) return;
+    const collapsed = appLayout.classList.contains('sidebar-collapsed');
+    setSidebarCollapsed(!collapsed);
+  });
+
+  (function initSidebarState() {
+    if (window.innerWidth <= 900) return;
+    let collapsed = false;
+    try { collapsed = localStorage.getItem('sidebarCollapsed') === '1'; } catch {}
+    setSidebarCollapsed(collapsed);
+  })();
 
   function showView(name, { updateHash = true } = {}) {
     const isCartas = name === 'cartas';
@@ -694,9 +869,12 @@
 
   const scrapeBtn = document.getElementById('scrapeBtn');
   const scrapeBtnText = document.getElementById('scrapeBtnText');
-  const competitorsInput = document.getElementById('competitorsInput');
   const scrapeStatusMsg = document.getElementById('scrapeStatusMsg');
   const pricesTableWrap = document.getElementById('pricesTableWrap');
+  const lastUpdateInfo = document.getElementById('lastUpdateInfo');
+  const confirmModal = document.getElementById('confirmModal');
+  const confirmModalAccept = document.getElementById('confirmModalAccept');
+  const confirmModalCancel = document.getElementById('confirmModalCancel');
 
   const DEFAULT_HOTELS = [
     { name: "La Fonda de los Príncipes", url: "https://www.booking.com/hotel/es/la-fonda-de-los-principes.html" },
@@ -711,10 +889,6 @@
     { name: "NH Collection Madrid Gran Vía", url: "https://www.booking.com/hotel/es/nh-collection-madrid-gran-via.html" },
   ];
   const DEFAULT_COMPETITORS = DEFAULT_HOTELS.map((h) => `${h.name}\n${h.url}`).join('\n');
-
-  if (!competitorsInput.value.trim()) {
-    competitorsInput.value = DEFAULT_COMPETITORS;
-  }
 
   function showScrapeStatus(msg, type) {
     scrapeStatusMsg.textContent = msg;
@@ -732,8 +906,50 @@
     if (loading) {
       scrapeBtnText.innerHTML = '<span class="spinner"></span> Consultando…';
     } else {
-      scrapeBtnText.textContent = 'Actualizar tabla';
+      scrapeBtnText.textContent = 'Actualizar precios';
     }
+  }
+
+  function setLastUpdateText(scrapedAt) {
+    if (!scrapedAt) {
+      lastUpdateInfo.textContent = 'Última actualización: —';
+      return;
+    }
+    const when = new Date(scrapedAt);
+    const dateStr = when.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const timeStr = when.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    lastUpdateInfo.textContent = `Última actualización: ${dateStr} a las ${timeStr}`;
+  }
+
+  function askForceUpdateConfirmation() {
+    return new Promise((resolve) => {
+      const close = (accepted) => {
+        confirmModal.classList.remove('visible');
+        confirmModal.setAttribute('aria-hidden', 'true');
+        confirmModalAccept.removeEventListener('click', onAccept);
+        confirmModalCancel.removeEventListener('click', onCancel);
+        confirmModal.removeEventListener('click', onOverlayClick);
+        document.removeEventListener('keydown', onKeyDown);
+        resolve(accepted);
+      };
+
+      const onAccept = () => close(true);
+      const onCancel = () => close(false);
+      const onOverlayClick = (e) => {
+        if (e.target === confirmModal) close(false);
+      };
+      const onKeyDown = (e) => {
+        if (e.key === 'Escape') close(false);
+      };
+
+      confirmModal.classList.add('visible');
+      confirmModal.setAttribute('aria-hidden', 'false');
+      confirmModalAccept.addEventListener('click', onAccept);
+      confirmModalCancel.addEventListener('click', onCancel);
+      confirmModal.addEventListener('click', onOverlayClick);
+      document.addEventListener('keydown', onKeyDown);
+      confirmModalAccept.focus();
+    });
   }
 
   function parseCompetitors(raw) {
@@ -780,6 +996,19 @@
     }).format(value);
   }
 
+  function formatHotelName(name) {
+    const lowerArticles = new Set(['de', 'del', 'la', 'las', 'los', 'el', 'al', 'y', 'e', 'o', 'u']);
+    return String(name)
+      .toLowerCase()
+      .split(/\s+/)
+      .map((word, idx) => {
+        if (!word) return word;
+        if (idx > 0 && lowerArticles.has(word)) return word;
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      })
+      .join(' ');
+  }
+
   const FONDA_NAME = 'La Fonda de los Príncipes';
 
   function renderPricesTable(matrix) {
@@ -808,7 +1037,7 @@
             return `<td data-hotel="${hIdx}" data-date="${dIdx}"${cls}${title}>${display}</td>`;
           })
           .join('');
-        return `<tr><td class="hotel-cell">${escapeHtml(hotel.name)}</td>${cells}</tr>`;
+        return `<tr><td class="hotel-cell">${escapeHtml(formatHotelName(hotel.name))}</td>${cells}</tr>`;
       })
       .join('');
 
@@ -843,14 +1072,14 @@
       .join('');
 
     const summaryRows =
-      `<tr style="border-top:2px solid var(--border)"><td class="hotel-cell" style="font-style:italic">Precio medio competencia</td>${avgCells}</tr>` +
-      `<tr><td class="hotel-cell" style="font-style:italic">Fonda vs media</td>${diffCells}</tr>`;
+      `<tr class="summary-divider" style="border-top:2px solid #cfd6df;background:#f3f5f8"><td class="hotel-cell" style="font-style:italic;background:#eef2f7">Precio medio competencia</td>${avgCells}</tr>` +
+      `<tr class="summary-separator" style="background:#f3f5f8"><td class="hotel-cell" style="font-style:italic;background:#eef2f7">La Fonda vs Media</td>${diffCells}</tr>`;
 
     pricesTableWrap.innerHTML = `
       <table class="prices-table">
         <thead>
           <tr>
-            <th>Hotel / Fecha (EUR por noche)</th>
+            <th></th>
             ${head}
           </tr>
         </thead>
@@ -1011,10 +1240,9 @@
 
   scrapeBtn.addEventListener('click', async () => {
     hideScrapeStatus();
-    const allHotels = parseCompetitors(competitorsInput.value);
+    const allHotels = parseCompetitors(DEFAULT_COMPETITORS);
     if (!allHotels.length) {
       showScrapeStatus('Introduce al menos un hotel con su URL de Booking.com.', 'error');
-      competitorsInput.focus();
       return;
     }
 
@@ -1054,12 +1282,19 @@
 
     renderPricesTable(currentMatrix);
 
-    const pending = allHotels.filter((h) => pendingNames.has(h.name));
+    let pending = allHotels.filter((h) => pendingNames.has(h.name));
     if (!pending.length) {
-      showScrapeStatus('Todos los hoteles ya están actualizados hoy.', 'success');
-      loadAndApplyHistory(currentMatrix);
-      setScrapeLoading(false);
-      return;
+      const shouldForceUpdate = await askForceUpdateConfirmation();
+
+      if (!shouldForceUpdate) {
+        showScrapeStatus('Todos los hoteles ya están actualizados hoy.', 'success');
+        loadAndApplyHistory(currentMatrix);
+        setScrapeLoading(false);
+        return;
+      }
+
+      pending = allHotels;
+      showScrapeStatus('Forzando nueva actualización de precios…', 'success');
     }
 
     let completed = 0;
@@ -1084,6 +1319,13 @@
     }
 
     loadAndApplyHistory(currentMatrix);
+    try {
+      const latestRes = await fetch('/api/precios-competencia/ultimo');
+      if (latestRes.ok) {
+        const latestData = await latestRes.json();
+        setLastUpdateText(latestData?.scrapedAt);
+      }
+    } catch {}
     if (errors) {
       showScrapeStatus(`Completado con ${errors} error(es) de ${pending.length} hoteles.`, 'error');
     } else {
@@ -1096,7 +1338,7 @@
     try {
       const days = 15;
       const dates = generateDates(days);
-      const allHotels = parseCompetitors(competitorsInput.value);
+      const allHotels = parseCompetitors(DEFAULT_COMPETITORS);
       if (!allHotels.length) return;
 
       currentMatrix = buildSkeletonMatrix(allHotels, dates);
@@ -1113,13 +1355,8 @@
               if (srcEntry && srcEntry.price != null) target.prices[i] = srcEntry;
             }
           }
-          if (data.scrapedAt) {
-            const when = new Date(data.scrapedAt);
-            const dateStr = when.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            const timeStr = when.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-            showScrapeStatus(`Última consulta: ${dateStr} a las ${timeStr}`, 'success');
-          }
         }
+        setLastUpdateText(data?.scrapedAt);
       }
 
       renderPricesTable(currentMatrix);
