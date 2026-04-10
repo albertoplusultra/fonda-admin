@@ -7,6 +7,8 @@ curl_headers.txt
 # Logs y artefactos
 *.log
 *.tmp
+eng.traineddata
+server/tmp/
 .DS_Store
 Thumbs.db
 .vercel/
