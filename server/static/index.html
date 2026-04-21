@@ -1363,6 +1363,81 @@
         display: block;
       }
     }
+
+    /* ── Vista móvil de la tabla de tareas ── */
+    @media (max-width: 700px) {
+      /* Ocultar sidebar en móvil */
+      .sidebar { display: none; }
+
+      /* Filtros en columna */
+      .tareas-filtros-bar { flex-direction: column; align-items: stretch; }
+      .tareas-filtro-select, .tareas-filtro-text { width: 100%; }
+
+      /* Tabla → lista de tarjetas */
+      .tasks-table, .tasks-table tbody { display: block; width: 100%; }
+      .tasks-table thead { display: none; }
+
+      .tasks-table tr {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.3rem 0.5rem;
+        padding: 0.65rem 0.75rem;
+        border-bottom: 1px solid #edf1f6;
+        border-right: none;
+      }
+      .tasks-table tr.tareas-row-selected { background: #fdf8f0; }
+
+      /* Ocultar todas las celdas salvo las que mostramos */
+      .tasks-table td {
+        display: none;
+        border: none;
+        padding: 0;
+      }
+
+      /* Título: línea completa, máx 2 líneas con puntos suspensivos */
+      .tasks-table .cell-asunto {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        flex: 0 0 100%;
+        white-space: normal;
+        font-weight: 600;
+        font-size: 0.82rem;
+        color: #1e293b;
+        margin-bottom: 0.1rem;
+      }
+
+      /* Segunda línea: owner · prio · creación */
+      .tasks-table td[data-field="responsable"],
+      .tasks-table td[data-field="importancia"],
+      .tasks-table .cell-date-created {
+        display: flex;
+        align-items: center;
+        flex: 0 0 auto;
+        font-size: 0.72rem;
+        color: #64748b;
+      }
+
+      /* Separador · entre campos */
+      .tasks-table td[data-field="responsable"]::after,
+      .tasks-table td[data-field="importancia"]::after {
+        content: '·';
+        margin-left: 0.5rem;
+        color: #cbd5e1;
+      }
+
+      /* Los badges en móvil un poco más pequeños */
+      .tasks-table td[data-field="importancia"] .badge,
+      .tasks-table td[data-field="estado"] .badge {
+        font-size: 0.68rem;
+        padding: 0.1rem 0.4rem;
+      }
+
+      /* El wrapper inline no necesita bloque en móvil */
+      .tasks-table .cell-inline-wrap { display: inline-flex; }
+    }
   </style>
 </head>
 <body>
@@ -2815,12 +2890,12 @@
 
         return `<tr data-task-id="${r.id}" class="${selectedId === r.id ? 'tareas-row-selected' : ''}">
           <td class="cell-asunto">${escapeHtml(r.asunto || '')}</td>
-          <td class="cell-date">${escapeHtml(fmtDate(r.created_at))}</td>
+          <td class="cell-date cell-date-created">${escapeHtml(fmtDate(r.created_at))}</td>
           <td class="cell-inline" data-field="edificio" data-value="${escapeHtml(r.edificio||'')}">${edifPill}</td>
           <td class="cell-inline" data-field="importancia" data-value="${escapeHtml(r.importancia||'')}">${impPill}</td>
           <td class="cell-inline" data-field="estado" data-value="${escapeHtml(r.estado||'')}">${estadoPill}</td>
           <td class="cell-inline" data-field="responsable" data-value="${escapeHtml(r.responsable||'')}">${respPill}</td>
-          <td class="cell-date">${escapeHtml(fmtDate(r.updated_at))}</td>
+          <td class="cell-date cell-date-last">${escapeHtml(fmtDate(r.updated_at))}</td>
           <td class="cell-coment">${coment}</td>
         </tr>`;
       }).join('');
