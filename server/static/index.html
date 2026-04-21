@@ -866,6 +866,7 @@
 
     .tasks-table .cell-inline {
       cursor: pointer;
+      position: relative;
     }
     .tasks-table .cell-inline:hover .badge,
     .tasks-table .cell-inline:hover .cell-inline-pill {
@@ -888,7 +889,9 @@
 
     /* Dropdown flotante custom */
     .inline-dd {
-      position: fixed;
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
       z-index: 9999;
       background: #fff;
       border: 1px solid #e2e8f0;
@@ -897,6 +900,10 @@
       overflow: hidden;
       min-width: 150px;
       padding: 0.3rem 0;
+    }
+    .inline-dd.open-up {
+      top: auto;
+      bottom: calc(100% + 4px);
     }
     .inline-dd-opt {
       display: flex;
@@ -2845,7 +2852,13 @@
     }
 
     function openInlineSelect(cell) {
+      // Toggle: si ya hay dropdown en esta celda, solo cerrar
+      if (cell.querySelector('#activeInlineDd')) {
+        closeInlineDropdown();
+        return;
+      }
       closeInlineDropdown();
+
       const field  = cell.dataset.field;
       const value  = cell.dataset.value;
       const taskId = cell.closest('tr').dataset.taskId;
@@ -2883,16 +2896,15 @@
         dd.appendChild(optEl);
       });
 
-      // Posicionar bajo la celda (position:fixed → coordenadas de viewport, sin scrollY)
-      const rect = cell.getBoundingClientRect();
-      document.body.appendChild(dd);
+      // Insertar en la celda (position:absolute relativo a la celda)
+      cell.appendChild(dd);
+
+      // Si no cabe abajo, abrir hacia arriba
+      const cellRect = cell.getBoundingClientRect();
       const ddH = dd.offsetHeight;
-      const top = rect.bottom + 4;
-      const adjustedTop = (top + ddH > window.innerHeight)
-        ? rect.top - ddH - 4
-        : top;
-      dd.style.top  = adjustedTop + 'px';
-      dd.style.left = rect.left + 'px';
+      if (cellRect.bottom + ddH + 4 > window.innerHeight) {
+        dd.classList.add('open-up');
+      }
 
       // Cerrar al hacer clic fuera
       setTimeout(() => document.addEventListener('click', closeInlineDropdown, { once: true }), 0);
