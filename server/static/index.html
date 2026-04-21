@@ -209,6 +209,10 @@
       display: block;
     }
 
+    .sidebar-test-only {
+      display: none;
+    }
+
     .view.hidden {
       display: none;
     }
@@ -1062,6 +1066,74 @@
     .cell-vence-vencida { color: var(--error); font-weight: 600; }
 
     /* ── Barra de filtros (nueva) ── */
+    /* ── Opiniones ─────────────────────────────────────── */
+    .opiniones-filtro-btn {
+      background: var(--bg-card, #f4f4f4);
+      border: 1px solid var(--border, #ddd);
+      border-radius: 999px;
+      padding: 0.3rem 0.85rem;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--text, #333);
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .opiniones-filtro-btn:hover {
+      background: var(--primary, #2563eb);
+      border-color: var(--primary, #2563eb);
+      color: #fff;
+    }
+    .opiniones-filtro-btn.active {
+      background: var(--primary, #2563eb);
+      border-color: var(--primary, #2563eb);
+      color: #fff;
+    }
+    .opiniones-source-badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+    .opiniones-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.83rem;
+      min-width: 640px;
+    }
+    .opiniones-table thead th {
+      background: var(--bg-th, #f7f8fa);
+      padding: 0.65rem 0.75rem;
+      font-weight: 600;
+      text-align: left;
+      border-bottom: 2px solid var(--border, #ddd);
+      color: var(--text-muted, #666);
+      white-space: nowrap;
+    }
+    .opiniones-table tbody tr:nth-child(even) td {
+      background: var(--bg-row-even, #fafafa);
+    }
+    .opiniones-table tbody tr:hover td {
+      background: var(--bg-row-hover, #f0f4ff);
+    }
+    .opiniones-table td {
+      padding: 0.65rem 0.75rem;
+      border-bottom: 1px solid var(--border, #eee);
+      vertical-align: top;
+    }
+    .opiniones-text-cell {
+      max-width: 380px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.45;
+    }
+    .opiniones-stars {
+      font-size: 1rem;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Tareas ─────────────────────────────────────────── */
     .tareas-filtros-bar {
       display: flex;
       flex-wrap: wrap;
@@ -1307,10 +1379,13 @@
       <button type="button" class="sidebar-item" data-nav="cartas">
         Crear cartas de bienvenida
       </button>
-      <hr class="sidebar-separator">
-      <span class="sidebar-section-label">En test</span>
-      <button type="button" class="sidebar-item" data-nav="competencia">
+      <hr class="sidebar-separator sidebar-test-only">
+      <span class="sidebar-section-label sidebar-test-only">En test</span>
+      <button type="button" class="sidebar-item sidebar-test-only" data-nav="competencia">
         Precios competencia
+      </button>
+      <button type="button" class="sidebar-item sidebar-test-only" data-nav="opiniones">
+        Opiniones
       </button>
     </nav>
   </aside>
@@ -1360,6 +1435,53 @@
         </button>
       </div>
 
+    </div>
+    </section>
+
+    <section class="view view--opiniones hidden" id="view-opiniones" aria-labelledby="title-opiniones" aria-hidden="true">
+    <div class="card card-wide card-flat">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+        <div>
+          <h2 class="card-title" id="title-opiniones" style="margin-bottom:0.25rem">Opiniones</h2>
+          <p id="opinionesLastUpdate" class="card-desc" style="margin:0;font-size:0.85rem">Última actualización: —</p>
+        </div>
+        <div style="display:flex;gap:0.75rem;align-items:center;flex-shrink:0;flex-wrap:wrap">
+          <div id="opinionesSourceTags" style="display:flex;gap:0.4rem"></div>
+          <button class="btn btn-primary" id="opinionesBtn" type="button" style="white-space:nowrap;padding:0.65rem 1rem">
+            <span id="opinionesBtnText">Recibir opiniones nuevas</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="opinionesConfigWarning" class="status-msg" style="display:none;margin-top:0.75rem"></div>
+      <div id="opinionesStatusMsg" class="status-msg" style="display:none;margin-top:0.75rem"></div>
+
+      <!-- Filtros por fuente -->
+      <div id="opinionesFiltros" style="display:flex;gap:0.5rem;margin-top:1rem;flex-wrap:wrap">
+        <button class="opiniones-filtro-btn active" data-source="">Todas</button>
+        <button class="opiniones-filtro-btn" data-source="booking">Booking</button>
+        <button class="opiniones-filtro-btn" data-source="google">Google</button>
+        <button class="opiniones-filtro-btn" data-source="tripadvisor">TripAdvisor</button>
+      </div>
+
+      <div id="opinionesTableWrap" class="table-wrap" style="margin-top:0.75rem;display:none">
+        <table class="opiniones-table" id="opinionesTable">
+          <thead>
+            <tr>
+              <th style="width:110px">Fuente</th>
+              <th style="width:105px">Fecha</th>
+              <th style="width:120px">Autor</th>
+              <th style="min-width:200px">Opinión</th>
+              <th style="width:90px;text-align:center">Valoración</th>
+            </tr>
+          </thead>
+          <tbody id="opinionesTbody"></tbody>
+        </table>
+      </div>
+
+      <p id="opinionesEmpty" style="display:none;text-align:center;color:var(--text-muted,#888);padding:2rem 0">
+        No hay opiniones guardadas. Pulsa «Recibir opiniones nuevas» para importarlas.
+      </p>
     </div>
     </section>
 
@@ -1619,6 +1741,12 @@
 
     const elName = document.getElementById('headerUserName');
     if (elName && nombre) elName.textContent = nombre;
+
+    if (u.email === 'alberto@plusultracapital.com') {
+      document.querySelectorAll('.sidebar-test-only').forEach(el => {
+        el.style.display = '';
+      });
+    }
   }).catch(() => {});
 
   const appLayout = document.querySelector('.app-layout');
@@ -1626,10 +1754,11 @@
   const viewCartas = document.getElementById('view-cartas');
   const viewCompetencia = document.getElementById('view-competencia');
   const viewTareas = document.getElementById('view-tareas');
+  const viewOpiniones = document.getElementById('view-opiniones');
   const navButtons = document.querySelectorAll('.sidebar-item[data-nav]');
 
-  const VIEW_IDS = ['cartas', 'competencia', 'tareas'];
-  const viewByName = { cartas: viewCartas, competencia: viewCompetencia, tareas: viewTareas };
+  const VIEW_IDS = ['cartas', 'competencia', 'tareas', 'opiniones'];
+  const viewByName = { cartas: viewCartas, competencia: viewCompetencia, tareas: viewTareas, opiniones: viewOpiniones };
 
   function setSidebarCollapsed(collapsed) {
     appLayout.classList.toggle('sidebar-collapsed', collapsed);
@@ -1676,12 +1805,17 @@
       document.title = 'Precios competencia — Fonda de los Príncipes';
     } else if (name === 'tareas') {
       document.title = 'Lista de tareas — Fonda de los Príncipes';
+    } else if (name === 'opiniones') {
+      document.title = 'Opiniones — Fonda de los Príncipes';
     } else {
       document.title = 'Fonda de los Príncipes — Admin';
     }
 
     if (name === 'tareas' && typeof window.__tareasOnShow === 'function') {
       window.__tareasOnShow();
+    }
+    if (name === 'opiniones' && typeof window.__opinionesOnShow === 'function') {
+      window.__opinionesOnShow();
     }
   }
 
@@ -2749,13 +2883,13 @@
         dd.appendChild(optEl);
       });
 
-      // Posicionar bajo la celda
+      // Posicionar bajo la celda (position:fixed → coordenadas de viewport, sin scrollY)
       const rect = cell.getBoundingClientRect();
       document.body.appendChild(dd);
       const ddH = dd.offsetHeight;
-      const top = (rect.bottom + window.scrollY + 4);
-      const adjustedTop = (rect.bottom + ddH + 4 > window.innerHeight)
-        ? rect.top + window.scrollY - ddH - 4
+      const top = rect.bottom + 4;
+      const adjustedTop = (top + ddH > window.innerHeight)
+        ? rect.top - ddH - 4
         : top;
       dd.style.top  = adjustedTop + 'px';
       dd.style.left = rect.left + 'px';
@@ -2996,6 +3130,200 @@
     }
     window.__tareasOnShow = function () {
       loadTareasList();
+    };
+  })();
+
+  // ═══════════════════════════════════════════════════════════
+  // OPINIONES
+  // ═══════════════════════════════════════════════════════════
+  (function () {
+    const opinionesBtn       = document.getElementById('opinionesBtn');
+    const opinionesBtnText   = document.getElementById('opinionesBtnText');
+    const opinionesStatusMsg = document.getElementById('opinionesStatusMsg');
+    const opinionesConfigWarning = document.getElementById('opinionesConfigWarning');
+    const opinionesLastUpdate = document.getElementById('opinionesLastUpdate');
+    const opinionesTbody     = document.getElementById('opinionesTbody');
+    const opinionesTableWrap = document.getElementById('opinionesTableWrap');
+    const opinionesEmpty     = document.getElementById('opinionesEmpty');
+    const opinionesFiltros   = document.getElementById('opinionesFiltros');
+    const opinionesSourceTags= document.getElementById('opinionesSourceTags');
+
+    let allReviews = [];
+    let activeFuente = '';
+
+    const SOURCE_LABELS = { booking: 'Booking', google: 'Google', tripadvisor: 'TripAdvisor' };
+    const SOURCE_COLORS = {
+      booking:     { bg: '#003580', text: '#fff' },
+      google:      { bg: '#4285f4', text: '#fff' },
+      tripadvisor: { bg: '#00af87', text: '#fff' },
+    };
+
+    function escHtml(s) {
+      if (!s) return '';
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function fmtDate(d) {
+      if (!d) return '—';
+      try { return new Date(d + 'T12:00:00').toLocaleDateString('es-ES', { day:'2-digit', month:'short', year:'numeric' }); }
+      catch { return d; }
+    }
+
+    function fmtDateTime(dt) {
+      if (!dt) return '—';
+      try { return new Date(dt).toLocaleString('es-ES', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }); }
+      catch { return dt; }
+    }
+
+    function renderStars(rating, ratingMax) {
+      if (rating == null) return '—';
+      const max = ratingMax || 10;
+      // Normalizar a 0-5
+      const normalized = (rating / max) * 5;
+      const full = Math.floor(normalized);
+      const half = normalized - full >= 0.5 ? 1 : 0;
+      const empty = 5 - full - half;
+      const pct = Math.round((rating / max) * 100);
+      const stars =
+        '★'.repeat(full) +
+        (half ? '½' : '') +
+        '☆'.repeat(empty);
+      const label = max === 10 ? `${rating.toFixed(1)}/10` : `${rating.toFixed(1)}/5`;
+      return `<span class="opiniones-stars" title="${label}" style="color:${pct >= 70 ? '#f5a623' : pct >= 40 ? '#e08a00' : '#cc3300'}">${stars}</span> <small style="color:var(--text-muted,#888)">${label}</small>`;
+    }
+
+    function sourceBadge(source) {
+      const label = SOURCE_LABELS[source] || source;
+      const c = SOURCE_COLORS[source] || { bg: '#666', text: '#fff' };
+      return `<span class="opiniones-source-badge" style="background:${c.bg};color:${c.text}">${escHtml(label)}</span>`;
+    }
+
+    function renderTable(reviews) {
+      if (!reviews.length) {
+        opinionesTableWrap.style.display = 'none';
+        opinionesEmpty.style.display = 'block';
+        return;
+      }
+      opinionesEmpty.style.display = 'none';
+      opinionesTableWrap.style.display = '';
+
+      opinionesTbody.innerHTML = reviews.map(r => `
+        <tr>
+          <td>${sourceBadge(r.source)}</td>
+          <td style="white-space:nowrap">${escHtml(fmtDate(r.review_date))}</td>
+          <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(r.author || '')}">${escHtml(r.author || '—')}</td>
+          <td class="opiniones-text-cell">${escHtml(r.text || '—')}</td>
+          <td style="text-align:center;white-space:nowrap">${renderStars(r.rating, r.rating_max)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function applyFilter() {
+      const filtered = activeFuente
+        ? allReviews.filter(r => r.source === activeFuente)
+        : allReviews;
+      renderTable(filtered);
+    }
+
+    function updateSourceTags(reviews) {
+      const counts = {};
+      for (const r of reviews) counts[r.source] = (counts[r.source] || 0) + 1;
+      const tags = Object.entries(counts).map(([src, n]) => {
+        const c = SOURCE_COLORS[src] || { bg: '#666', text: '#fff' };
+        const label = SOURCE_LABELS[src] || src;
+        return `<span style="background:${c.bg};color:${c.text};padding:0.2rem 0.55rem;border-radius:999px;font-size:0.78rem;font-weight:600">${label} ${n}</span>`;
+      });
+      opinionesSourceTags.innerHTML = tags.join('');
+    }
+
+    async function loadOpiniones() {
+      try {
+        const url = activeFuente ? `/api/opiniones?source=${activeFuente}` : '/api/opiniones';
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Error cargando opiniones');
+        const { reviews, lastScrapedAt } = await res.json();
+        allReviews = reviews || [];
+        opinionesLastUpdate.textContent = lastScrapedAt
+          ? `Última actualización: ${fmtDateTime(lastScrapedAt)}`
+          : 'Última actualización: —';
+        updateSourceTags(allReviews);
+        applyFilter();
+      } catch (err) {
+        opinionesStatusMsg.textContent = err.message;
+        opinionesStatusMsg.className = 'status-msg error';
+        opinionesStatusMsg.style.display = '';
+      }
+    }
+
+    async function checkConfig() {
+      try {
+        const res = await fetch('/api/opiniones/config');
+        if (!res.ok) return;
+        const cfg = await res.json();
+        const missing = Object.entries(cfg)
+          .filter(([, v]) => !v)
+          .map(([k]) => `${k.toUpperCase()}_REVIEWS_URL`);
+        if (missing.length) {
+          opinionesConfigWarning.innerHTML =
+            `<strong>Aviso:</strong> Las siguientes fuentes no están configuradas en el .env y se omitirán: <code>${missing.join(', ')}</code>.`;
+          opinionesConfigWarning.className = 'status-msg';
+          opinionesConfigWarning.style.display = '';
+        } else {
+          opinionesConfigWarning.style.display = 'none';
+        }
+      } catch {}
+    }
+
+    // Filtros
+    opinionesFiltros.addEventListener('click', (e) => {
+      const btn = e.target.closest('.opiniones-filtro-btn');
+      if (!btn) return;
+      opinionesFiltros.querySelectorAll('.opiniones-filtro-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeFuente = btn.dataset.source || '';
+      applyFilter();
+    });
+
+    // Botón recibir opiniones
+    opinionesBtn.addEventListener('click', async () => {
+      opinionesBtn.disabled = true;
+      opinionesBtnText.textContent = 'Obteniendo opiniones…';
+      opinionesStatusMsg.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/opiniones/scrape', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ onlyNew: true }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Error al obtener opiniones');
+
+        const parts = [];
+        if (data.inserted > 0) parts.push(`${data.inserted} nueva${data.inserted !== 1 ? 's' : ''}`);
+        else parts.push('Sin opiniones nuevas');
+        if (data.errors && data.errors.length) {
+          parts.push(`${data.errors.length} error${data.errors.length !== 1 ? 'es' : ''}: ${data.errors.map(e => e.label).join(', ')}`);
+        }
+
+        opinionesStatusMsg.textContent = parts.join(' · ');
+        opinionesStatusMsg.className = data.errors && data.errors.length ? 'status-msg' : 'status-msg success';
+        opinionesStatusMsg.style.display = '';
+
+        await loadOpiniones();
+      } catch (err) {
+        opinionesStatusMsg.textContent = err.message;
+        opinionesStatusMsg.className = 'status-msg error';
+        opinionesStatusMsg.style.display = '';
+      } finally {
+        opinionesBtn.disabled = false;
+        opinionesBtnText.textContent = 'Recibir opiniones nuevas';
+      }
+    });
+
+    window.__opinionesOnShow = function () {
+      loadOpiniones();
+      checkConfig();
     };
   })();
 </script>
