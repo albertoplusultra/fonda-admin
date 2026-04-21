@@ -2685,6 +2685,8 @@
       cell.innerHTML = '';
       cell.appendChild(sel);
       sel.focus();
+      // Abrir el desplegable automáticamente
+      try { sel.showPicker(); } catch { sel.click(); }
 
       async function save() {
         const newVal = sel.value;
