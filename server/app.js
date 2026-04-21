@@ -17,6 +17,9 @@ const STATIC_DIR = path.join(__dirname, "static");
 app.use(cookieParser());
 app.use(express.json({ limit: "32kb" }));
 
+// Archivos estáticos públicos (logo, favicon, css…) — sin autenticación
+app.use("/static", express.static(STATIC_DIR));
+
 // Rutas de auth (públicas: /login, /auth/google, /auth/callback, /auth/logout)
 app.use(authRouter);
 
@@ -24,8 +27,6 @@ app.use(authRouter);
 app.use(requireAuth);
 
 app.get("/api/me", (req, res) => res.json({ email: req.user.email, name: req.user.name }));
-
-app.use("/static", express.static(STATIC_DIR));
 
 app.use("/api/tareas", tareasRouter);
 
