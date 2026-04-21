@@ -1834,8 +1834,10 @@
     const elName = document.getElementById('headerUserName');
     if (elName && nombre) elName.textContent = nombre;
 
-    const TEST_EMAILS = ['alberto@plusultracapital.com', 'alberto@lafondadelosprincipes.com'];
-    if (TEST_EMAILS.includes(u.email)) {
+    const emailLower = (u.email || '').toLowerCase().trim();
+    const TEST_DOMAINS = ['plusultracapital.com', 'lafondadelosprincipes.com'];
+    const isTestUser = TEST_DOMAINS.some(d => emailLower.endsWith('@' + d));
+    if (isTestUser) {
       document.querySelectorAll('.sidebar-test-only').forEach(el => {
         el.style.display = 'block';
       });
