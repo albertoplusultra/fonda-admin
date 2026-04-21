@@ -863,21 +863,51 @@
     .tasks-table .cell-inline {
       cursor: pointer;
     }
-    .tasks-table .cell-inline:hover {
-      background: #f1f5f9;
+    .tasks-table .cell-inline:hover .badge,
+    .tasks-table .cell-inline:hover .cell-inline-pill {
+      filter: brightness(0.95);
     }
 
-    .cell-inline-select {
-      width: 100%;
-      font-size: 0.76rem;
-      font-family: inherit;
-      padding: 0.2rem 0.3rem;
-      border: 1.5px solid var(--accent);
-      border-radius: 5px;
-      background: #fff;
-      color: var(--text);
-      outline: none;
+    .cell-inline-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.18rem 0.45rem 0.18rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      white-space: nowrap;
+      background: #f1f5f9;
+      color: #475569;
     }
+    .cell-inline-pill svg { flex-shrink: 0; opacity: 0.6; }
+
+    /* Dropdown flotante custom */
+    .inline-dd {
+      position: fixed;
+      z-index: 9999;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      box-shadow: 0 6px 24px rgba(15,23,42,0.13);
+      overflow: hidden;
+      min-width: 150px;
+      padding: 0.3rem 0;
+    }
+    .inline-dd-opt {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.45rem 0.75rem;
+      font-size: 0.8rem;
+      font-family: inherit;
+      cursor: pointer;
+      color: #1e293b;
+      transition: background 0.1s;
+      white-space: nowrap;
+    }
+    .inline-dd-opt:hover { background: #f8fafc; }
+    .inline-dd-opt.active { background: #f1f5f9; font-weight: 600; }
 
     .tasks-table .cell-asunto {
       white-space: normal;
@@ -2627,9 +2657,13 @@
           '<tr><td colspan="10" style="padding:1.2rem;text-align:center;color:#64748b">No hay tareas con estos filtros.</td></tr>';
         return;
       }
+      const chevron = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+
       tableBody.innerHTML = rows.map((r) => {
-        const estadoBadge = `<span class="badge badge-${r.estado}">${escapeHtml(ESTADO_LABEL[r.estado] || r.estado)}</span>`;
-        const impBadge    = `<span class="badge badge-imp-${r.importancia}">${escapeHtml(IMP_LABEL[r.importancia] || r.importancia)}</span>`;
+        const estadoPill = `<span class="badge badge-${r.estado}" style="display:inline-flex;align-items:center;gap:0.3rem">${escapeHtml(ESTADO_LABEL[r.estado] || r.estado)}${chevron}</span>`;
+        const impPill    = `<span class="badge badge-imp-${r.importancia}" style="display:inline-flex;align-items:center;gap:0.3rem">${escapeHtml(IMP_LABEL[r.importancia] || r.importancia)}${chevron}</span>`;
+        const edifPill   = `<span class="cell-inline-pill">${escapeHtml(r.edificio || '—')}${chevron}</span>`;
+        const respPill   = `<span class="cell-inline-pill">${escapeHtml(r.responsable || '— sin asignar')}${chevron}</span>`;
 
         const coment = r.ultimo_comentario
           ? escapeHtml(String(r.ultimo_comentario).slice(0, 180)) + (String(r.ultimo_comentario).length > 180 ? '…' : '')
@@ -2638,10 +2672,10 @@
         return `<tr data-task-id="${r.id}" class="${selectedId === r.id ? 'tareas-row-selected' : ''}">
           <td class="cell-asunto">${escapeHtml(r.asunto || '')}</td>
           <td class="cell-date">${escapeHtml(fmtDate(r.created_at))}</td>
-          <td class="cell-inline" data-field="edificio" data-value="${escapeHtml(r.edificio||'')}">${escapeHtml(r.edificio || '—')}</td>
-          <td class="cell-inline" data-field="importancia" data-value="${escapeHtml(r.importancia||'')}">${impBadge}</td>
-          <td class="cell-inline" data-field="estado" data-value="${escapeHtml(r.estado||'')}">${estadoBadge}</td>
-          <td class="cell-inline" data-field="responsable" data-value="${escapeHtml(r.responsable||'')}">${escapeHtml(r.responsable || '—')}</td>
+          <td class="cell-inline" data-field="edificio" data-value="${escapeHtml(r.edificio||'')}">${edifPill}</td>
+          <td class="cell-inline" data-field="importancia" data-value="${escapeHtml(r.importancia||'')}">${impPill}</td>
+          <td class="cell-inline" data-field="estado" data-value="${escapeHtml(r.estado||'')}">${estadoPill}</td>
+          <td class="cell-inline" data-field="responsable" data-value="${escapeHtml(r.responsable||'')}">${respPill}</td>
           <td class="cell-date">${escapeHtml(fmtDate(r.updated_at))}</td>
           <td class="cell-coment">${coment}</td>
         </tr>`;
@@ -2665,49 +2699,69 @@
       openDrawer(Number(tr.dataset.taskId));
     });
 
-    function openInlineSelect(cell) {
-      if (cell.querySelector('select')) return; // ya abierto
-      const field    = cell.dataset.field;
-      const value    = cell.dataset.value;
-      const taskId   = cell.closest('tr').dataset.taskId;
-      const original = cell.innerHTML;
-      const opts     = INLINE_OPTS[field] || [];
+    // Colores para las opciones del dropdown
+    const INLINE_COLORS = {
+      importancia: { alta: 'badge-imp-alta', media: 'badge-imp-media', baja: 'badge-imp-baja' },
+      estado:      { pendiente: 'badge-pendiente', en_proceso: 'badge-en_proceso', completado: 'badge-completado', cancelado: 'badge-cancelado' },
+    };
 
-      const sel = document.createElement('select');
-      sel.className = 'cell-inline-select';
+    function closeInlineDropdown() {
+      const d = document.getElementById('activeInlineDd');
+      if (d) d.remove();
+    }
+
+    function openInlineSelect(cell) {
+      closeInlineDropdown();
+      const field  = cell.dataset.field;
+      const value  = cell.dataset.value;
+      const taskId = cell.closest('tr').dataset.taskId;
+      const opts   = INLINE_OPTS[field] || [];
+
+      const dd = document.createElement('div');
+      dd.className = 'inline-dd';
+      dd.id = 'activeInlineDd';
+
       opts.forEach(([v, label]) => {
-        const opt = document.createElement('option');
-        opt.value = v; opt.textContent = label;
-        if (v === value) opt.selected = true;
-        sel.appendChild(opt);
+        const colorMap = INLINE_COLORS[field] || {};
+        const cls      = colorMap[v] || '';
+        const optEl    = document.createElement('div');
+        optEl.className = 'inline-dd-opt' + (v === value ? ' active' : '');
+        optEl.innerHTML = cls
+          ? `<span class="badge ${cls}" style="pointer-events:none">${escapeHtml(label)}</span>`
+          : `<span style="pointer-events:none">${escapeHtml(label)}</span>`;
+
+        optEl.addEventListener('mousedown', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          closeInlineDropdown();
+          if (v === value) return;
+          try {
+            const res = await fetch('/api/tareas/' + taskId, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ [field]: v }),
+            });
+            if (!res.ok) throw new Error();
+            await loadTareasList();
+            if (selectedId === Number(taskId)) await loadDrawerData(Number(taskId));
+          } catch { /* mantener valor */ }
+        });
+        dd.appendChild(optEl);
       });
 
-      cell.innerHTML = '';
-      cell.appendChild(sel);
-      sel.focus();
-      // Abrir el desplegable automáticamente
-      try { sel.showPicker(); } catch { sel.click(); }
+      // Posicionar bajo la celda
+      const rect = cell.getBoundingClientRect();
+      document.body.appendChild(dd);
+      const ddH = dd.offsetHeight;
+      const top = (rect.bottom + window.scrollY + 4);
+      const adjustedTop = (rect.bottom + ddH + 4 > window.innerHeight)
+        ? rect.top + window.scrollY - ddH - 4
+        : top;
+      dd.style.top  = adjustedTop + 'px';
+      dd.style.left = rect.left + 'px';
 
-      async function save() {
-        const newVal = sel.value;
-        if (newVal === value) { cell.innerHTML = original; return; }
-        try {
-          const res = await fetch('/api/tareas/' + taskId, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ [field]: newVal }),
-          });
-          if (!res.ok) throw new Error();
-          await loadTareasList();
-          if (selectedId === Number(taskId)) await loadDrawerData(Number(taskId));
-        } catch {
-          cell.innerHTML = original;
-        }
-      }
-
-      sel.addEventListener('change', save);
-      sel.addEventListener('blur', () => { if (sel.value === value) cell.innerHTML = original; });
-      sel.addEventListener('keydown', (e) => { if (e.key === 'Escape') { cell.innerHTML = original; } });
+      // Cerrar al hacer clic fuera
+      setTimeout(() => document.addEventListener('click', closeInlineDropdown, { once: true }), 0);
     }
 
     async function moverTask(id, direccion) {
