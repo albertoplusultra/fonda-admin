@@ -866,7 +866,10 @@
 
     .tasks-table .cell-inline {
       cursor: pointer;
+    }
+    .cell-inline-wrap {
       position: relative;
+      display: inline-block;
     }
     .tasks-table .cell-inline:hover .badge,
     .tasks-table .cell-inline:hover .cell-inline-pill {
@@ -2801,10 +2804,10 @@
       const chevron = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
 
       tableBody.innerHTML = rows.map((r) => {
-        const estadoPill = `<span class="badge badge-${r.estado}" style="display:inline-flex;align-items:center;gap:0.3rem">${escapeHtml(ESTADO_LABEL[r.estado] || r.estado)}${chevron}</span>`;
-        const impPill    = `<span class="badge badge-imp-${r.importancia}" style="display:inline-flex;align-items:center;gap:0.3rem">${escapeHtml(IMP_LABEL[r.importancia] || r.importancia)}${chevron}</span>`;
-        const edifPill   = `<span class="cell-inline-pill">${escapeHtml(r.edificio || '—')}${chevron}</span>`;
-        const respPill   = `<span class="cell-inline-pill">${escapeHtml(r.responsable || '— sin asignar')}${chevron}</span>`;
+        const estadoPill = `<div class="cell-inline-wrap"><span class="badge badge-${r.estado}" style="display:inline-flex;align-items:center;gap:0.3rem">${escapeHtml(ESTADO_LABEL[r.estado] || r.estado)}${chevron}</span></div>`;
+        const impPill    = `<div class="cell-inline-wrap"><span class="badge badge-imp-${r.importancia}" style="display:inline-flex;align-items:center;gap:0.3rem">${escapeHtml(IMP_LABEL[r.importancia] || r.importancia)}${chevron}</span></div>`;
+        const edifPill   = `<div class="cell-inline-wrap"><span class="cell-inline-pill">${escapeHtml(r.edificio || '—')}${chevron}</span></div>`;
+        const respPill   = `<div class="cell-inline-wrap"><span class="cell-inline-pill">${escapeHtml(r.responsable || '— sin asignar')}${chevron}</span></div>`;
 
         const coment = r.ultimo_comentario
           ? escapeHtml(String(r.ultimo_comentario).slice(0, 180)) + (String(r.ultimo_comentario).length > 180 ? '…' : '')
@@ -2858,6 +2861,7 @@
         return;
       }
       closeInlineDropdown();
+      const wrap = cell.querySelector('.cell-inline-wrap');
 
       const field  = cell.dataset.field;
       const value  = cell.dataset.value;
@@ -2896,13 +2900,13 @@
         dd.appendChild(optEl);
       });
 
-      // Insertar en la celda (position:absolute relativo a la celda)
-      cell.appendChild(dd);
+      // Insertar en el wrapper div (position:absolute relativo al div)
+      wrap.appendChild(dd);
 
       // Si no cabe abajo, abrir hacia arriba
-      const cellRect = cell.getBoundingClientRect();
+      const wrapRect = wrap.getBoundingClientRect();
       const ddH = dd.offsetHeight;
-      if (cellRect.bottom + ddH + 4 > window.innerHeight) {
+      if (wrapRect.bottom + ddH + 4 > window.innerHeight) {
         dd.classList.add('open-up');
       }
 
