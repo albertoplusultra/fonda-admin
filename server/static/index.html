@@ -739,7 +739,6 @@
 
     .tasks-table {
       width: 100%;
-      table-layout: fixed;
       border-collapse: collapse;
       font-size: 0.78rem;
       font-family: "Inter", "Segoe UI", system-ui, sans-serif;
@@ -1630,14 +1629,14 @@
         <table class="tasks-table" aria-describedby="title-tareas">
           <thead>
             <tr>
-              <th style="width:22%"><span class="tasks-sort-btn" style="cursor:default">Incidencia</span></th>
-              <th style="width:7%"><button class="tasks-sort-btn" data-sort="created_at">Creada <span class="sort-icon" id="si-created_at">⇅</span></button></th>
-              <th style="width:9%"><span class="tasks-sort-btn" style="cursor:default">Edificio</span></th>
-              <th style="width:6%"><button class="tasks-sort-btn" data-sort="importancia">Prio <span class="sort-icon" id="si-importancia">⇅</span></button></th>
-              <th style="width:9%"><button class="tasks-sort-btn" data-sort="estado">Estado <span class="sort-icon" id="si-estado">⇅</span></button></th>
-              <th style="width:8%"><span class="tasks-sort-btn" style="cursor:default">Owner</span></th>
-              <th style="width:7%"><button class="tasks-sort-btn" data-sort="updated_at">Last <span class="sort-icon" id="si-updated_at">⇅</span></button></th>
-              <th style="width:32%"><button class="tasks-sort-btn" data-sort="ultimo_comentario">Comentarios <span class="sort-icon" id="si-ultimo_comentario">⇅</span></button></th>
+              <th style="min-width:160px;width:20%"><span class="tasks-sort-btn" style="cursor:default">Incidencia</span></th>
+              <th style="min-width:68px;white-space:nowrap"><button class="tasks-sort-btn" data-sort="created_at">Creada <span class="sort-icon" id="si-created_at">⇅</span></button></th>
+              <th style="min-width:100px"><span class="tasks-sort-btn" style="cursor:default">Edificio</span></th>
+              <th style="min-width:75px"><button class="tasks-sort-btn" data-sort="importancia">Prio <span class="sort-icon" id="si-importancia">⇅</span></button></th>
+              <th style="min-width:100px"><button class="tasks-sort-btn" data-sort="estado">Estado <span class="sort-icon" id="si-estado">⇅</span></button></th>
+              <th style="min-width:90px"><span class="tasks-sort-btn" style="cursor:default">Owner</span></th>
+              <th style="min-width:68px;white-space:nowrap"><button class="tasks-sort-btn" data-sort="updated_at">Last <span class="sort-icon" id="si-updated_at">⇅</span></button></th>
+              <th style="min-width:160px;width:28%"><button class="tasks-sort-btn" data-sort="ultimo_comentario">Comentarios <span class="sort-icon" id="si-ultimo_comentario">⇅</span></button></th>
             </tr>
           </thead>
           <tbody id="tareasTableBody"></tbody>
