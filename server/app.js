@@ -6,9 +6,10 @@ const { router: authRouter, requireAuth } = require("./auth");
 
 const { generateCartasZip } = require("./cartas");
 const { generateCompetitionMatrix } = require("./booking");
-const { initDb, getHistoryBulk, getLatestRun, getScrapedHotelsToday } = require("./db");
+const { initDb, getHistoryBulk, getLatestRun, getScrapedHotelsToday, saveReviews, getReviews, getLastReviewDates, getLastReviewScrapedAt } = require("./db");
 const { DEFAULT_HOTELS } = require("./competitors");
 const tareasRouter = require("./tareasApi");
+const { scrapeAllReviews } = require("./opiniones");
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -139,6 +140,57 @@ app.get("/api/precios-competencia/pendientes", async (_req, res) => {
     return res.status(500).json({ error: message });
   }
 });
+
+// ─── Opiniones ──────────────────────────────────────────────────────────────
+
+app.get("/api/opiniones", async (req, res) => {
+  try {
+    const { source } = req.query;
+    const reviews = await getReviews({ source: source || undefined });
+    const lastScrapedAt = await getLastReviewScrapedAt();
+    return res.json({ reviews, lastScrapedAt });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Error inesperado";
+    console.error("Error obteniendo opiniones:", error);
+    return res.status(500).json({ error: message });
+  }
+});
+
+app.post("/api/opiniones/scrape", async (req, res) => {
+  try {
+    const onlyNew = req.body?.onlyNew !== false; // por defecto solo nuevas
+
+    let fromDates = { booking: null, google: null, tripadvisor: null };
+    if (onlyNew) {
+      fromDates = await getLastReviewDates();
+    }
+
+    const { reviews, errors } = await scrapeAllReviews(fromDates);
+    const { inserted } = await saveReviews(reviews);
+
+    return res.json({
+      ok: true,
+      found: reviews.length,
+      inserted,
+      errors,
+      scrapedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Error inesperado";
+    console.error("Error scraping opiniones:", error);
+    return res.status(500).json({ error: message });
+  }
+});
+
+app.get("/api/opiniones/config", (_req, res) => {
+  return res.json({
+    booking: !!process.env.BOOKING_REVIEWS_URL,
+    google: !!process.env.GOOGLE_REVIEWS_URL,
+    tripadvisor: !!process.env.TRIPADVISOR_REVIEWS_URL,
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
 
 app.get("/api/cron/scrape", async (req, res) => {
   const secret = process.env.CRON_SECRET;

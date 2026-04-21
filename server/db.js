@@ -58,6 +58,19 @@ async function initDb() {
         FOREIGN KEY (tarea_id) REFERENCES tareas(id) ON DELETE CASCADE
       )`,
       `CREATE INDEX IF NOT EXISTS idx_tarea_historial_tarea ON tarea_historial(tarea_id, created_at)`,
+      `CREATE TABLE IF NOT EXISTS reviews (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        source TEXT NOT NULL,
+        external_id TEXT,
+        review_date TEXT,
+        author TEXT,
+        text TEXT,
+        rating REAL,
+        rating_max REAL,
+        scraped_at TEXT NOT NULL
+      )`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_reviews_external_id ON reviews(external_id) WHERE external_id IS NOT NULL`,
+      `CREATE INDEX IF NOT EXISTS idx_reviews_source_date ON reviews(source, review_date)`,
     ],
     "write",
   );
@@ -533,6 +546,112 @@ async function moverTareaRelativo(id, direccion) {
   return getTareaById(tid);
 }
 
+/**
+ * Guarda un array de reseñas en la BD, ignorando duplicados por external_id.
+ * @param {Array} reviews
+ * @returns {{ inserted: number }}
+ */
+async function saveReviews(reviews) {
+  const client = getClient();
+  if (!client || !reviews.length) return { inserted: 0 };
+
+  const now = new Date().toISOString();
+  let inserted = 0;
+
+  for (const r of reviews) {
+    try {
+      if (r.external_id) {
+        const existing = await client.execute({
+          sql: `SELECT id FROM reviews WHERE external_id = ?`,
+          args: [r.external_id],
+        });
+        if (existing.rows.length) continue;
+      }
+
+      await client.execute({
+        sql: `INSERT INTO reviews (source, external_id, review_date, author, text, rating, rating_max, scraped_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [
+          r.source,
+          r.external_id ?? null,
+          r.review_date ?? null,
+          r.author ?? null,
+          r.text ?? null,
+          r.rating ?? null,
+          r.rating_max ?? null,
+          now,
+        ],
+      });
+      inserted++;
+    } catch (err) {
+      // Ignorar errores de unicidad; loguear otros
+      if (!String(err.message).includes("UNIQUE")) {
+        console.error("[db] Error insertando reseña:", err.message, r);
+      }
+    }
+  }
+
+  return { inserted };
+}
+
+/**
+ * Devuelve todas las reseñas almacenadas, con filtros opcionales.
+ * @param {{ source?: string, limit?: number, offset?: number }} opts
+ */
+async function getReviews({ source, limit = 500, offset = 0 } = {}) {
+  const client = getClient();
+  if (!client) return [];
+
+  const where = source ? "WHERE source = ?" : "";
+  const args = source ? [source, limit, offset] : [limit, offset];
+
+  const rs = await client.execute({
+    sql: `SELECT id, source, external_id, review_date, author, text, rating, rating_max, scraped_at
+          FROM reviews
+          ${where}
+          ORDER BY review_date DESC, scraped_at DESC
+          LIMIT ? OFFSET ?`,
+    args,
+  });
+
+  return rs.rows;
+}
+
+/**
+ * Devuelve la fecha (review_date) de la reseña más reciente por fuente.
+ * { booking: 'YYYY-MM-DD' | null, google: null, tripadvisor: null }
+ */
+async function getLastReviewDates() {
+  const client = getClient();
+  if (!client) return { booking: null, google: null, tripadvisor: null };
+
+  const rs = await client.execute(
+    `SELECT source, MAX(review_date) AS last_date
+     FROM reviews
+     WHERE review_date IS NOT NULL
+     GROUP BY source`,
+  );
+
+  const result = { booking: null, google: null, tripadvisor: null };
+  for (const row of rs.rows) {
+    result[row.source] = row.last_date;
+  }
+  return result;
+}
+
+/**
+ * Devuelve el timestamp de la última vez que se scrapeó (scraped_at más reciente).
+ */
+async function getLastReviewScrapedAt() {
+  const client = getClient();
+  if (!client) return null;
+
+  const rs = await client.execute(
+    `SELECT MAX(scraped_at) AS last_at FROM reviews`,
+  );
+  return rs.rows[0]?.last_at ?? null;
+}
+
 module.exports = {
   initDb,
   saveScrapingRun,
@@ -548,4 +667,8 @@ module.exports = {
   addTareaHistorial,
   reordenarTareas,
   moverTareaRelativo,
+  saveReviews,
+  getReviews,
+  getLastReviewDates,
+  getLastReviewScrapedAt,
 };
