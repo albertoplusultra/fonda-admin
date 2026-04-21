@@ -34,9 +34,41 @@ async function initDb() {
       )`,
       `CREATE INDEX IF NOT EXISTS idx_hotel_date
         ON price_history(hotel_name, target_date)`,
+      `CREATE TABLE IF NOT EXISTS tareas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        estado TEXT NOT NULL DEFAULT 'pendiente',
+        edificio TEXT NOT NULL DEFAULT '',
+        asunto TEXT NOT NULL,
+        importancia TEXT NOT NULL DEFAULT 'media',
+        responsable TEXT NOT NULL DEFAULT '',
+        orden INTEGER NOT NULL DEFAULT 0,
+        fecha_limite TEXT DEFAULT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_tareas_responsable ON tareas(responsable)`,
+      `CREATE INDEX IF NOT EXISTS idx_tareas_estado ON tareas(estado)`,
+      `CREATE INDEX IF NOT EXISTS idx_tareas_orden ON tareas(orden)`,
+      `CREATE TABLE IF NOT EXISTS tarea_historial (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tarea_id INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        autor TEXT NOT NULL DEFAULT '',
+        texto TEXT NOT NULL,
+        FOREIGN KEY (tarea_id) REFERENCES tareas(id) ON DELETE CASCADE
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_tarea_historial_tarea ON tarea_historial(tarea_id, created_at)`,
     ],
     "write",
   );
+
+  // Schema migrations for existing installations (ignore errors when column already exists)
+  const migrations = [
+    `ALTER TABLE tareas ADD COLUMN fecha_limite TEXT DEFAULT NULL`,
+  ];
+  for (const sql of migrations) {
+    try { await client.execute(sql); } catch {}
+  }
 }
 
 async function saveScrapingRun(scrapedAt, hotels, dates) {
@@ -174,4 +206,346 @@ async function getScrapedHotelsToday() {
   return new Set(rs.rows.map((r) => r.hotel_name));
 }
 
-module.exports = { initDb, saveScrapingRun, getHistoryBulk, getLatestRun, getScrapedHotelsToday };
+const TAREA_ESTADOS = new Set(["pendiente", "en_proceso", "completado", "cancelado"]);
+const TAREA_IMPORTANCIAS = new Set(["baja", "media", "alta"]);
+
+function normalizeEstado(value) {
+  const v = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+  if (TAREA_ESTADOS.has(v)) return v;
+  return null;
+}
+
+function normalizeImportancia(value) {
+  const v = String(value || "")
+    .trim()
+    .toLowerCase();
+  if (TAREA_IMPORTANCIAS.has(v)) return v;
+  return null;
+}
+
+async function listTareasResumen() {
+  const client = getClient();
+  if (!client) return null;
+
+  const rs = await client.execute(
+    `SELECT estado, COUNT(*) AS total FROM tareas GROUP BY estado`,
+  );
+
+  const map = { pendiente: 0, en_proceso: 0, completado: 0, cancelado: 0 };
+  let total = 0;
+  for (const row of rs.rows) {
+    const k = String(row.estado);
+    map[k] = Number(row.total) || 0;
+    total += map[k];
+  }
+  return { ...map, total };
+}
+
+async function listTareasResponsables() {
+  const client = getClient();
+  if (!client) return null;
+
+  const rs = await client.execute(
+    `SELECT DISTINCT TRIM(responsable) AS responsable
+     FROM tareas
+     WHERE TRIM(responsable) != ''
+     ORDER BY responsable COLLATE NOCASE`,
+  );
+
+  return rs.rows.map((r) => r.responsable);
+}
+
+async function listTareas({ responsable, estado, ordenar = "orden", direccion = "asc" } = {}) {
+  const client = getClient();
+  if (!client) return null;
+
+  const args = [];
+  const where = [];
+
+  if (responsable && String(responsable).trim()) {
+    where.push("LOWER(TRIM(t.responsable)) = LOWER(TRIM(?))");
+    args.push(String(responsable).trim());
+  }
+
+  const estadoStr = String(estado || "").trim().toLowerCase();
+  if (estadoStr === "activas") {
+    where.push("t.estado IN ('pendiente', 'en_proceso')");
+  } else {
+    const est = normalizeEstado(estado);
+    if (est) {
+      where.push("t.estado = ?");
+      args.push(est);
+    }
+  }
+
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+  const dir = String(direccion).toLowerCase() === "desc" ? "DESC" : "ASC";
+  let orderSql = `t.orden ${dir}, t.id ASC`;
+  if (ordenar === "created") orderSql = `t.created_at ${dir}, t.id ASC`;
+  else if (ordenar === "updated") orderSql = `t.updated_at ${dir}, t.id ASC`;
+  else if (ordenar === "importancia")
+    orderSql = `CASE t.importancia WHEN 'alta' THEN 3 WHEN 'media' THEN 2 WHEN 'baja' THEN 1 ELSE 0 END ${dir}, t.orden ASC, t.id ASC`;
+  else if (ordenar === "asunto") orderSql = `t.asunto COLLATE NOCASE ${dir}, t.id ASC`;
+  else if (ordenar === "orden") orderSql = `t.orden ${dir}, t.id ASC`;
+
+  const rs = await client.execute({
+    sql: `SELECT t.id, t.estado, t.edificio, t.asunto, t.importancia, t.responsable, t.orden,
+                 t.fecha_limite, t.created_at, t.updated_at,
+                 (SELECT h.texto FROM tarea_historial h
+                  WHERE h.tarea_id = t.id ORDER BY h.created_at DESC LIMIT 1) AS ultimo_comentario
+          FROM tareas t
+          ${whereSql}
+          ORDER BY ${orderSql}`,
+    args,
+  });
+
+  return rs.rows;
+}
+
+async function getTareaById(id) {
+  const client = getClient();
+  if (!client) return null;
+
+  const tid = Number(id);
+  if (!Number.isInteger(tid) || tid < 1) return null;
+
+  const tr = await client.execute({
+    sql: `SELECT id, estado, edificio, asunto, importancia, responsable, orden, fecha_limite, created_at, updated_at
+          FROM tareas WHERE id = ?`,
+    args: [tid],
+  });
+
+  if (!tr.rows.length) return null;
+
+  const hr = await client.execute({
+    sql: `SELECT id, created_at, autor, texto
+          FROM tarea_historial WHERE tarea_id = ? ORDER BY created_at ASC, id ASC`,
+    args: [tid],
+  });
+
+  return { ...tr.rows[0], historial: hr.rows };
+}
+
+async function createTarea({
+  estado = "pendiente",
+  edificio = "",
+  asunto,
+  importancia = "media",
+  responsable = "",
+  fecha_limite = null,
+  comentario_inicial = "",
+  autor = "",
+}) {
+  const client = getClient();
+  if (!client) return null;
+
+  const subject = String(asunto || "").trim();
+  if (!subject) throw new Error("El asunto es obligatorio.");
+
+  const e = normalizeEstado(estado) || "pendiente";
+  const imp = normalizeImportancia(importancia) || "media";
+  const fl = fecha_limite ? String(fecha_limite).trim() : null;
+  const now = new Date().toISOString();
+
+  const maxRs = await client.execute(`SELECT COALESCE(MAX(orden), 0) + 1 AS next_orden FROM tareas`);
+  const nextOrden = Number(maxRs.rows[0]?.next_orden) || 1;
+
+  const ins = await client.execute({
+    sql: `INSERT INTO tareas (estado, edificio, asunto, importancia, responsable, orden, fecha_limite, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          RETURNING id`,
+    args: [e, String(edificio || "").trim(), subject, imp, String(responsable || "").trim(), nextOrden, fl, now, now],
+  });
+
+  const id = ins.rows[0]?.id;
+  if (id == null) throw new Error("No se pudo crear la tarea.");
+
+  const note = String(comentario_inicial || "").trim();
+  if (note) {
+    await client.execute({
+      sql: `INSERT INTO tarea_historial (tarea_id, created_at, autor, texto) VALUES (?, ?, ?, ?)`,
+      args: [id, now, String(autor || "").trim(), note],
+    });
+  }
+
+  return getTareaById(id);
+}
+
+async function updateTarea(id, patch) {
+  const client = getClient();
+  if (!client) return null;
+
+  const tid = Number(id);
+  if (!Number.isInteger(tid) || tid < 1) return null;
+
+  const allowed = ["estado", "edificio", "asunto", "importancia", "responsable", "orden", "fecha_limite"];
+  const sets = [];
+  const args = [];
+
+  for (const key of allowed) {
+    if (!(key in patch)) continue;
+    if (key === "estado") {
+      const v = normalizeEstado(patch.estado);
+      if (!v) continue;
+      sets.push("estado = ?");
+      args.push(v);
+    } else if (key === "importancia") {
+      const v = normalizeImportancia(patch.importancia);
+      if (!v) continue;
+      sets.push("importancia = ?");
+      args.push(v);
+    } else if (key === "orden") {
+      const n = Number(patch.orden);
+      if (!Number.isFinite(n)) continue;
+      sets.push("orden = ?");
+      args.push(Math.round(n));
+    } else if (key === "asunto") {
+      const v = String(patch.asunto ?? "").trim();
+      if (!v) throw new Error("El asunto no puede quedar vacío.");
+      sets.push("asunto = ?");
+      args.push(v);
+    } else if (key === "edificio" || key === "responsable") {
+      sets.push(`${key} = ?`);
+      args.push(String(patch[key] ?? "").trim());
+    } else if (key === "fecha_limite") {
+      const v = patch.fecha_limite;
+      sets.push("fecha_limite = ?");
+      args.push(v ? String(v).trim() : null);
+    }
+  }
+
+  if (!sets.length) return getTareaById(tid);
+
+  const now = new Date().toISOString();
+  sets.push("updated_at = ?");
+  args.push(now);
+  args.push(tid);
+
+  await client.execute({
+    sql: `UPDATE tareas SET ${sets.join(", ")} WHERE id = ?`,
+    args,
+  });
+
+  return getTareaById(tid);
+}
+
+async function addTareaHistorial(tareaId, { texto, autor = "" }) {
+  const client = getClient();
+  if (!client) return null;
+
+  const tid = Number(tareaId);
+  if (!Number.isInteger(tid) || tid < 1) return null;
+
+  const body = String(texto || "").trim();
+  if (!body) throw new Error("El comentario no puede estar vacío.");
+
+  const now = new Date().toISOString();
+
+  await client.execute({
+    sql: `INSERT INTO tarea_historial (tarea_id, created_at, autor, texto) VALUES (?, ?, ?, ?)`,
+    args: [tid, now, String(autor || "").trim(), body],
+  });
+
+  await client.execute({
+    sql: `UPDATE tareas SET updated_at = ? WHERE id = ?`,
+    args: [now, tid],
+  });
+
+  return getTareaById(tid);
+}
+
+async function reordenarTareas(ids) {
+  const client = getClient();
+  if (!client) return null;
+
+  if (!Array.isArray(ids) || !ids.length) throw new Error("Debe indicarse el nuevo orden.");
+
+  const clean = ids.map((x) => Number(x)).filter((n) => Number.isInteger(n) && n > 0);
+  if (!clean.length) throw new Error("Identificadores de tarea no válidos.");
+
+  const now = new Date().toISOString();
+  const stmts = clean.map((id, index) => ({
+    sql: `UPDATE tareas SET orden = ?, updated_at = ? WHERE id = ?`,
+    args: [(index + 1) * 10, now, id],
+  }));
+
+  await client.batch(stmts, "write");
+  return true;
+}
+
+/**
+ * Intercambia `orden` con la tarea inmediatamente superior o inferior en la lista global.
+ * @param {"up"|"down"} direccion
+ */
+async function moverTareaRelativo(id, direccion) {
+  const client = getClient();
+  if (!client) return null;
+
+  const tid = Number(id);
+  if (!Number.isInteger(tid) || tid < 1) return null;
+  if (direccion !== "up" && direccion !== "down") throw new Error("Dirección no válida.");
+
+  const cur = await client.execute({
+    sql: `SELECT id, orden FROM tareas WHERE id = ?`,
+    args: [tid],
+  });
+  if (!cur.rows.length) return null;
+
+  const ordenActual = Number(cur.rows[0].orden) || 0;
+
+  const neighborSql =
+    direccion === "up"
+      ? `SELECT id, orden FROM tareas
+         WHERE orden < ? OR (orden = ? AND id < ?)
+         ORDER BY orden DESC, id DESC
+         LIMIT 1`
+      : `SELECT id, orden FROM tareas
+         WHERE orden > ? OR (orden = ? AND id > ?)
+         ORDER BY orden ASC, id ASC
+         LIMIT 1`;
+
+  const nbArgs = [ordenActual, ordenActual, tid];
+  const nb = await client.execute({ sql: neighborSql, args: nbArgs });
+  if (!nb.rows.length) return getTareaById(tid);
+
+  const oid = Number(nb.rows[0].id);
+  const ordenOtro = Number(nb.rows[0].orden) || 0;
+  const now = new Date().toISOString();
+
+  await client.batch(
+    [
+      {
+        sql: `UPDATE tareas SET orden = ?, updated_at = ? WHERE id = ?`,
+        args: [ordenOtro, now, tid],
+      },
+      {
+        sql: `UPDATE tareas SET orden = ?, updated_at = ? WHERE id = ?`,
+        args: [ordenActual, now, oid],
+      },
+    ],
+    "write",
+  );
+
+  return getTareaById(tid);
+}
+
+module.exports = {
+  initDb,
+  saveScrapingRun,
+  getHistoryBulk,
+  getLatestRun,
+  getScrapedHotelsToday,
+  listTareas,
+  listTareasResumen,
+  listTareasResponsables,
+  getTareaById,
+  createTarea,
+  updateTarea,
+  addTareaHistorial,
+  reordenarTareas,
+  moverTareaRelativo,
+};

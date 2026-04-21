@@ -1,18 +1,33 @@
 const path = require("path");
 const express = require("express");
 const multer = require("multer");
+const cookieParser = require("cookie-parser");
+const { router: authRouter, requireAuth } = require("./auth");
 
 const { generateCartasZip } = require("./cartas");
 const { generateCompetitionMatrix } = require("./booking");
 const { initDb, getHistoryBulk, getLatestRun, getScrapedHotelsToday } = require("./db");
 const { DEFAULT_HOTELS } = require("./competitors");
+const tareasRouter = require("./tareasApi");
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 const STATIC_DIR = path.join(__dirname, "static");
 
+app.use(cookieParser());
 app.use(express.json({ limit: "32kb" }));
+
+// Rutas de auth (públicas: /login, /auth/google, /auth/callback, /auth/logout)
+app.use(authRouter);
+
+// A partir de aquí, todo requiere sesión activa
+app.use(requireAuth);
+
+app.get("/api/me", (req, res) => res.json({ email: req.user.email, name: req.user.name }));
+
 app.use("/static", express.static(STATIC_DIR));
+
+app.use("/api/tareas", tareasRouter);
 
 initDb().catch((err) => console.error("Error inicializando BD:", err));
 

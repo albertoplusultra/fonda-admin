@@ -8,6 +8,10 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    html, body {
+      overflow-x: clip;
+    }
+
     :root {
       --bg: #f7f6f2;
       --surface: #ffffff;
@@ -34,9 +38,10 @@
       width: 100%;
       background: var(--bg);
       border-bottom: 1px solid var(--border);
-      padding: 1rem 1.5rem;
+      padding: 0.75rem 1.5rem;
       display: flex;
       align-items: center;
+      justify-content: space-between;
       justify-content: flex-start;
     }
 
@@ -46,8 +51,57 @@
       height: auto;
     }
 
+    .header-user {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.15rem;
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+
+    .header-user-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .header-user-name {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .header-user-email {
+      font-size: 0.78rem;
+      color: #64748b;
+      max-width: 260px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .header-logout {
+      font-size: 0.72rem;
+      background: none;
+      border: none;
+      padding: 0;
+      color: #94a3b8;
+      cursor: pointer;
+      font-family: inherit;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      transition: color 0.15s;
+    }
+
+    .header-logout:hover {
+      color: #7a5c35;
+    }
+
     .app-layout {
       width: 100%;
+      min-width: 0;
       display: flex;
       gap: 0;
       flex: 1;
@@ -139,17 +193,35 @@
       font-weight: 500;
     }
 
+    .sidebar-separator {
+      margin: 0.75rem 0.55rem 0.4rem;
+      border: none;
+      border-top: 1px solid #e5e9f0;
+    }
+
+    .sidebar-section-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: #9ca3af;
+      text-transform: uppercase;
+      margin: 0 0.55rem 0.35rem;
+      display: block;
+    }
+
     .view.hidden {
       display: none;
     }
 
     .view {
       width: 100%;
+      min-width: 0;
     }
 
 
     main {
       width: 100%;
+      min-width: 0;
       padding: 2rem 1.5rem;
       display: flex;
       flex-direction: column;
@@ -341,50 +413,69 @@
 
     .form-group label {
       display: block;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       font-weight: 600;
       color: var(--text-muted);
-      margin-bottom: 0.4rem;
-      letter-spacing: 0.02em;
+      margin-bottom: 0.35rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
     }
 
+    /* ── Control base compartido ── */
     .form-group input[type="text"],
     .form-group input[type="url"],
-    .form-group input[type="date"] {
+    .form-group input[type="date"],
+    .form-group select,
+    .form-group textarea,
+    .tareas-drawer-body input[type="text"],
+    .tareas-drawer-body input[type="date"],
+    .tareas-drawer-body select,
+    .tareas-drawer-body textarea {
       width: 100%;
-      padding: 0.65rem 0.85rem;
-      border: 1px solid var(--border);
+      padding: 0.6rem 0.85rem;
+      border: 1.5px solid var(--border);
       border-radius: 8px;
-      font-size: 0.9rem;
+      font-size: 0.875rem;
       font-family: inherit;
       color: var(--text);
       background: #fff;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    /* Flecha personalizada para selects */
+    .form-group select,
+    .tareas-drawer-body select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235e6774' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.7rem center;
+      padding-right: 2.2rem;
+      cursor: pointer;
     }
 
     .form-group textarea {
-      width: 100%;
       min-height: 220px;
-      padding: 0.65rem 0.85rem;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: 0.86rem;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-      color: var(--text);
-      background: #fff;
       resize: vertical;
-      line-height: 1.45;
+      line-height: 1.5;
     }
 
-    .form-group input:focus {
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus,
+    .tareas-drawer-body input:focus,
+    .tareas-drawer-body select:focus,
+    .tareas-drawer-body textarea:focus {
       outline: none;
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(176, 140, 82, 0.2);
+      box-shadow: 0 0 0 3px rgba(176, 140, 82, 0.18);
     }
 
-    .form-group textarea:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(176, 140, 82, 0.2);
+    .form-group input:hover:not(:focus),
+    .form-group select:hover:not(:focus),
+    .tareas-drawer-body input:hover:not(:focus),
+    .tareas-drawer-body select:hover:not(:focus) {
+      border-color: #b8c2ce;
     }
 
     .form-row {
@@ -578,6 +669,555 @@
       background: #e6ebf3;
     }
 
+    .subcard-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.85rem;
+    }
+
+    .tareas-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1rem;
+      align-items: flex-end;
+    }
+
+    .tareas-field-grow0 {
+      flex: 0 0 auto;
+      min-width: 140px;
+    }
+
+    .tareas-field-grow {
+      flex: 1 1 200px;
+      min-width: 180px;
+    }
+
+    .tareas-mi-nombre-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      align-items: center;
+    }
+
+    .tareas-mi-nombre-row input {
+      flex: 1 1 220px;
+      min-width: 0;
+    }
+
+    .tareas-nueva-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem 1rem;
+    }
+
+    .tareas-span-2 {
+      grid-column: span 2;
+    }
+
+    @media (max-width: 640px) {
+      .tareas-nueva-grid {
+        grid-template-columns: 1fr;
+      }
+      .tareas-span-2 {
+        grid-column: span 1;
+      }
+    }
+
+    .tareas-nueva-grid textarea {
+      min-height: 72px;
+    }
+
+    .tareas-table-wrap {
+      overflow: visible;
+      max-width: 100%;
+    }
+
+    .tasks-table {
+      width: 100%;
+      table-layout: fixed;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+      font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+    }
+
+    .tasks-table th,
+    .tasks-table td {
+      border-bottom: 1px solid #edf1f6;
+      border-right: 1px solid #edf1f6;
+      padding: 0.45rem 0.5rem;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    .tasks-table th:last-child,
+    .tasks-table td:last-child {
+      border-right: none;
+    }
+
+    .tasks-table thead th {
+      position: sticky;
+      top: 0;
+      background: #f1f3f7;
+      z-index: 1;
+      font-weight: 600;
+      color: #334155;
+      font-size: 0.72rem;
+      white-space: normal;
+      vertical-align: top;
+    }
+
+    .col-label {
+      display: block;
+      font-size: 0.67rem;
+      font-weight: 700;
+      color: #475569;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 0.28rem;
+      white-space: nowrap;
+    }
+
+    .col-filter,
+    .col-filter-text {
+      font-size: 0.74rem;
+      padding: 0.22rem 0.3rem;
+      border: 1px solid #d1d5db;
+      border-radius: 5px;
+      background: #fff;
+      width: 100%;
+      font-family: inherit;
+      color: var(--text);
+      font-weight: 400;
+    }
+
+    .col-filter:focus,
+    .col-filter-text:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(176, 140, 82, 0.18);
+    }
+
+    .th-with-filter {
+      min-width: 100px;
+    }
+
+    .th-plain {
+      white-space: nowrap;
+    }
+
+    .tasks-table tbody tr {
+      cursor: pointer;
+      background: #fff;
+    }
+
+    .tasks-table tbody tr:hover {
+      background: #faf9f6;
+    }
+
+    .tasks-table tbody tr.tareas-row-selected {
+      background: #f3efe6;
+      outline: 1px solid #d4c4a8;
+    }
+
+    .tasks-table .th-orden {
+      width: 52px;
+      text-align: center;
+    }
+
+    .tasks-table .cell-orden {
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .tasks-table .cell-orden button {
+      padding: 0.15rem 0.35rem;
+      margin: 0 1px;
+      font-size: 0.7rem;
+      border: 1px solid #cfd7e3;
+      border-radius: 4px;
+      background: #fff;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .tasks-table .cell-orden button:hover:not(:disabled) {
+      border-color: var(--accent);
+      color: var(--accent-hover);
+    }
+
+    .tasks-table .cell-orden button:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    .tasks-table select.cell-select {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.35rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      font-family: inherit;
+      max-width: 118px;
+    }
+
+    .tasks-table .cell-inline {
+      cursor: pointer;
+    }
+    .tasks-table .cell-inline:hover {
+      background: #f1f5f9;
+    }
+
+    .cell-inline-select {
+      width: 100%;
+      font-size: 0.76rem;
+      font-family: inherit;
+      padding: 0.2rem 0.3rem;
+      border: 1.5px solid var(--accent);
+      border-radius: 5px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+
+    .tasks-table .cell-asunto {
+      white-space: normal;
+      word-break: break-word;
+      font-weight: 500;
+      color: #1e293b;
+    }
+
+    .tasks-table .cell-coment {
+      white-space: normal;
+      word-break: break-word;
+      overflow-wrap: break-word;
+      color: #475569;
+      font-size: 0.74rem;
+      line-height: 1.35;
+    }
+
+    .tasks-table .cell-date {
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+      color: #475569;
+    }
+
+    .tareas-detail {
+      margin-top: 1.5rem;
+      padding: 1.25rem 1.35rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .tareas-detail.hidden {
+      display: none;
+    }
+
+    .tareas-detail-hint {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    .tareas-detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem 1rem;
+    }
+
+    .tareas-detail-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 1rem;
+    }
+
+    .tareas-historial-title {
+      margin-top: 1.35rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .tareas-historial {
+      list-style: none;
+      max-height: 280px;
+      overflow: auto;
+      border: 1px solid #e4e8ef;
+      border-radius: 8px;
+      padding: 0.5rem 0.65rem;
+      background: #fafbfc;
+    }
+
+    .tareas-historial li {
+      padding: 0.55rem 0.35rem;
+      border-bottom: 1px solid #eceff4;
+      font-size: 0.82rem;
+      line-height: 1.45;
+    }
+
+    .tareas-historial li:last-child {
+      border-bottom: none;
+    }
+
+    .tareas-historial .meta {
+      font-size: 0.72rem;
+      color: #64748b;
+      margin-bottom: 0.25rem;
+    }
+
+    #tareaHistorialTexto {
+      min-height: 96px;
+    }
+
+    /* ── Badges de estado e importancia ── */
+    .badge {
+      display: inline-block;
+      padding: 0.18rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.015em;
+      white-space: nowrap;
+    }
+
+    .badge-pendiente   { background: #fef3c7; color: #92400e; }
+    .badge-en_proceso  { background: #dbeafe; color: #1e40af; }
+    .badge-completado  { background: #d1fae5; color: #065f46; }
+    .badge-cancelado   { background: #f1f5f9; color: #64748b; }
+    .badge-imp-alta    { background: #fee2e2; color: #991b1b; }
+    .badge-imp-media   { background: #fff7ed; color: #9a3412; }
+    .badge-imp-baja    { background: #f1f5f9; color: #64748b; }
+
+    /* ── Barra de resumen ── */
+    .tareas-resumen {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin: 0.85rem 0 0.35rem;
+    }
+
+    .resumen-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.28rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 0.76rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+      color: var(--text);
+    }
+
+    .resumen-chip:hover { border-color: var(--accent); }
+
+    .resumen-chip.chip-active {
+      background: var(--text);
+      color: #fff;
+      border-color: var(--text);
+    }
+
+    .resumen-chip .rn { font-weight: 700; }
+    .resumen-chip:not(.chip-active) .rn-pendiente  { color: #92400e; }
+    .resumen-chip:not(.chip-active) .rn-en_proceso  { color: #1e40af; }
+    .resumen-chip:not(.chip-active) .rn-completado  { color: #065f46; }
+    .resumen-chip:not(.chip-active) .rn-cancelado   { color: #64748b; }
+
+    /* ── Fecha vencida ── */
+    .cell-vence-ok      { color: #475569; }
+    .cell-vence-vencida { color: var(--error); font-weight: 600; }
+
+    /* ── Barra de filtros (nueva) ── */
+    .tareas-filtros-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.45rem;
+      margin: 0.75rem 0 0;
+    }
+
+    .tareas-filtros-icon {
+      color: var(--text-muted);
+      flex-shrink: 0;
+      opacity: 0.7;
+    }
+
+    .tareas-filtro-select,
+    .tareas-filtro-text {
+      padding: 0.28rem 0.45rem;
+      font-size: 0.8rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--text);
+      font-family: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .tareas-filtro-select:focus,
+    .tareas-filtro-text:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(176, 140, 82, 0.18);
+    }
+
+    .tareas-filtro-text {
+      min-width: 130px;
+    }
+
+    .tareas-clear-filtros {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.28rem 0.5rem;
+      font-size: 0.8rem;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-family: inherit;
+      transition: color 0.15s;
+    }
+
+    .tareas-clear-filtros:hover { color: var(--text); }
+    .tareas-clear-filtros.oculto { display: none; }
+
+    /* ── Cabeceras ordenables ── */
+    .tasks-sort-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #475569;
+      cursor: pointer;
+      font-family: inherit;
+      white-space: nowrap;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      transition: color 0.15s;
+    }
+
+    .tasks-sort-btn:hover { color: var(--text); }
+
+    .sort-icon {
+      font-size: 0.65rem;
+      opacity: 0.35;
+      line-height: 1;
+    }
+
+    .sort-icon.si-active {
+      opacity: 1;
+      color: var(--accent);
+    }
+
+    /* ── Formulario colapsable ── */
+    .tareas-nueva-toggle-bar {
+      margin-top: 1rem;
+    }
+
+    .tareas-form-collapsible.hidden {
+      display: none;
+    }
+
+    /* ── Drawer lateral ── */
+    .tareas-drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.32);
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.22s ease, visibility 0.22s ease;
+    }
+
+    .tareas-drawer-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .tareas-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(858px, 100vw);
+      height: 100dvh;
+      height: 100vh;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      box-shadow: -8px 0 32px rgba(15, 23, 42, 0.14);
+      z-index: 1001;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.25s ease;
+      overflow: hidden;
+    }
+
+    .tareas-drawer.open {
+      transform: translateX(0);
+    }
+
+    #tareaEditAsuntoWrap { display:none; }
+    #tareaEditAsuntoWrap.visible { display:flex !important; }
+    #tareaEditAsuntoBtn:hover { color: var(--text); background: #f1f5f9; }
+
+    .tareas-drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.9rem 1.25rem 0.8rem;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .tareas-drawer-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .tareas-drawer-close {
+      background: none;
+      border: none;
+      font-size: 1.05rem;
+      line-height: 1;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 0.3rem 0.5rem;
+      border-radius: 6px;
+      font-family: inherit;
+    }
+
+    .tareas-drawer-close:hover {
+      background: #f1f5f9;
+      color: var(--text);
+    }
+
+    .tareas-drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.1rem 1.25rem 1.5rem;
+    }
+
+    .tareas-drawer-body .tareas-detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem 1rem;
+    }
+
+    .tareas-drawer-body .form-group {
+      margin-bottom: 0.75rem;
+    }
+
+
     footer {
       margin-top: auto;
       padding: 1.5rem;
@@ -617,6 +1257,13 @@
 
 <header>
   <img src="/static/logo_fonda.svg" alt="La Fonda de los Príncipes" class="brand-logo">
+  <div class="header-user">
+    <div class="header-user-row">
+      <span class="header-user-name" id="headerUserName"></span>
+      <span class="header-user-email" id="headerUserEmail"></span>
+    </div>
+    <a href="/auth/logout" class="header-logout">Cerrar sesión</a>
+  </div>
 </header>
 
 <div class="app-layout">
@@ -624,9 +1271,14 @@
     <button type="button" class="sidebar-toggle" id="sidebarToggleBtn" aria-label="Plegar menú" title="Plegar menú">↔</button>
     <p class="sidebar-title">Administración</p>
     <nav class="sidebar-nav">
-      <button type="button" class="sidebar-item active" data-nav="cartas" aria-current="page">
+      <button type="button" class="sidebar-item" data-nav="tareas">
+        Tareas pendientes
+      </button>
+      <button type="button" class="sidebar-item" data-nav="cartas">
         Crear cartas de bienvenida
       </button>
+      <hr class="sidebar-separator">
+      <span class="sidebar-section-label">En test</span>
       <button type="button" class="sidebar-item" data-nav="competencia">
         Precios competencia
       </button>
@@ -680,10 +1332,232 @@
 
     </div>
     </section>
+
+    <section class="view view--tareas hidden" id="view-tareas" aria-labelledby="title-tareas" aria-hidden="true">
+    <div class="card card-wide card-flat">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
+        <h2 class="card-title" id="title-tareas" style="margin-bottom:0">Lista de tareas</h2>
+        <div style="display:flex;gap:0.5rem;flex-shrink:0">
+          <button type="button" class="btn btn-primary" id="tareaAbrirModalBtn" style="white-space:nowrap;padding:0.65rem 1rem">+ Nueva tarea</button>
+        </div>
+      </div>
+
+      <div class="status-msg error" id="tareasDbMsg" style="display:none;margin-bottom:0.75rem"></div>
+
+      <!-- Barra de resumen -->
+
+      <!-- Barra de filtros -->
+      <div class="tareas-filtros-bar" id="tareasFiltrosBar">
+        <svg class="tareas-filtros-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+        <select class="tareas-filtro-select" id="cf-estado">
+          <option value="activas">Estado: Activas</option>
+          <option value="">Estado: Todos</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="en_proceso">En proceso</option>
+          <option value="completado">Completado</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+        <select class="tareas-filtro-select" id="cf-edificio">
+          <option value="">Edificio: Todos</option>
+          <option value="General">General</option>
+          <option value="La Fonda">La Fonda</option>
+          <option value="Iconic">Iconic</option>
+          <option value="Miosotis">Miosotis</option>
+          <option value="The Garden">The Garden</option>
+        </select>
+        <select class="tareas-filtro-select" id="cf-importancia">
+          <option value="">Urgencia: Todas</option>
+          <option value="alta">Alta</option>
+          <option value="media">Media</option>
+          <option value="baja">Baja</option>
+        </select>
+        <select class="tareas-filtro-select" id="cf-responsable">
+          <option value="">Owner: Todos</option>
+          <option value="Alberto">Alberto</option>
+          <option value="Antonio">Antonio</option>
+          <option value="Carlos">Carlos</option>
+          <option value="Harry">Harry</option>
+          <option value="Jaime">Jaime</option>
+          <option value="Juan">Juan</option>
+          <option value="Marta">Marta</option>
+        </select>
+        <input type="search" class="tareas-filtro-text" id="cf-asunto" placeholder="Buscar…" autocomplete="off">
+        <button type="button" id="tareasClearFiltrosBtn" class="tareas-clear-filtros oculto">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Limpiar
+        </button>
+      </div>
+
+      <!-- Tabla -->
+      <div class="table-wrap tareas-table-wrap" style="margin-top:0.75rem">
+        <table class="tasks-table" aria-describedby="title-tareas">
+          <thead>
+            <tr>
+              <th style="width:22%"><span class="tasks-sort-btn" style="cursor:default">Incidencia</span></th>
+              <th style="width:7%"><button class="tasks-sort-btn" data-sort="created_at">Creada <span class="sort-icon" id="si-created_at">⇅</span></button></th>
+              <th style="width:9%"><span class="tasks-sort-btn" style="cursor:default">Edificio</span></th>
+              <th style="width:6%"><button class="tasks-sort-btn" data-sort="importancia">Prio <span class="sort-icon" id="si-importancia">⇅</span></button></th>
+              <th style="width:9%"><button class="tasks-sort-btn" data-sort="estado">Estado <span class="sort-icon" id="si-estado">⇅</span></button></th>
+              <th style="width:8%"><span class="tasks-sort-btn" style="cursor:default">Owner</span></th>
+              <th style="width:7%"><button class="tasks-sort-btn" data-sort="updated_at">Last <span class="sort-icon" id="si-updated_at">⇅</span></button></th>
+              <th style="width:32%"><button class="tasks-sort-btn" data-sort="ultimo_comentario">Comentarios <span class="sort-icon" id="si-ultimo_comentario">⇅</span></button></th>
+            </tr>
+          </thead>
+          <tbody id="tareasTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+    </section>
   </main>
 </div>
 
 <footer>Fonda de los Príncipes &copy; 2026</footer>
+
+<!-- Drawer lateral de detalle de tarea -->
+<div id="tareasDrawerOverlay" class="tareas-drawer-overlay"></div>
+<div id="tareasDetailDrawer" class="tareas-drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTareaTitle">
+  <div class="tareas-drawer-header">
+    <div style="flex:1;min-width:0;display:flex;align-items:center;gap:0.4rem">
+      <h3 class="tareas-drawer-title" id="drawerTareaTitle" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></h3>
+      <button type="button" id="tareaEditAsuntoBtn" title="Editar asunto" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:0.2rem;border-radius:4px;flex-shrink:0;line-height:1" aria-label="Editar asunto">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </button>
+    </div>
+  </div>
+  <!-- Input inline para editar asunto (oculto por defecto) -->
+  <div id="tareaEditAsuntoWrap" style="display:none;padding:0.6rem 1.25rem;border-bottom:1px solid var(--border);gap:0.5rem;align-items:center">
+    <input type="text" id="tareaEditAsunto" style="flex:1;padding:0.45rem 0.7rem;border:1.5px solid var(--accent);border-radius:7px;font-size:0.9rem;font-family:inherit;color:var(--text);background:#fff;outline:none">
+    <button type="button" id="tareaAsuntoConfirmBtn" class="btn btn-primary" style="flex:0;padding:0.42rem 0.8rem;font-size:0.82rem;white-space:nowrap">Guardar</button>
+    <button type="button" id="tareaAsuntoCancelBtn" class="btn-secondary" style="padding:0.42rem 0.7rem;font-size:0.82rem;white-space:nowrap">Cancelar</button>
+  </div>
+  <div class="tareas-drawer-body">
+    <input type="hidden" id="tareaEditId">
+
+    <!-- Responsable · Prioridad · Estado · Edificio · Guardar en una fila -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr) auto;gap:0.75rem;align-items:end">
+      <div class="form-group" style="margin-bottom:0">
+        <label for="tareaEditResponsable">Responsable</label>
+        <select id="tareaEditResponsable">
+          <option value="">— sin asignar —</option>
+          <option value="Alberto">Alberto</option>
+          <option value="Antonio">Antonio</option>
+          <option value="Carlos">Carlos</option>
+          <option value="Harry">Harry</option>
+          <option value="Jaime">Jaime</option>
+          <option value="Juan">Juan</option>
+          <option value="Marta">Marta</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label for="tareaEditImportancia">Prioridad</label>
+        <select id="tareaEditImportancia">
+          <option value="baja">Baja</option>
+          <option value="media">Media</option>
+          <option value="alta">Alta</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label for="tareaEditEstado">Estado</label>
+        <select id="tareaEditEstado">
+          <option value="pendiente">Pendiente</option>
+          <option value="en_proceso">En proceso</option>
+          <option value="completado">Completado</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label for="tareaEditEdificio">Edificio</label>
+        <select id="tareaEditEdificio">
+          <option value="">— sin asignar —</option>
+          <option value="General">General</option>
+          <option value="La Fonda">La Fonda</option>
+          <option value="Iconic">Iconic</option>
+          <option value="Miosotis">Miosotis</option>
+          <option value="The Garden">The Garden</option>
+        </select>
+      </div>
+      <button type="button" class="btn btn-primary" id="tareaGuardarBtn" style="padding:0.6rem 1.1rem;white-space:nowrap">Guardar</button>
+    </div>
+    <div class="status-msg" id="tareaEditMsg" style="margin-top:0.65rem"></div>
+
+    <h4 class="tareas-historial-title" style="margin-top:1.35rem">Historial</h4>
+    <ul class="tareas-historial" id="tareasHistorialList"></ul>
+
+    <div class="form-group" style="margin-top:0.85rem">
+      <label for="tareaHistorialTexto">Añadir nota al historial</label>
+      <textarea id="tareaHistorialTexto" rows="4" placeholder="Nueva nota de seguimiento…"></textarea>
+    </div>
+    <button type="button" class="btn btn-primary" id="tareaHistorialBtn" style="flex:0 0 auto;padding:0.7rem 1.1rem;max-width:280px">Añadir comentario</button>
+    <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border);text-align:center">
+      <button type="button" id="tareasDrawerCloseBtn" class="tareas-drawer-close" aria-label="Cerrar panel" style="font-size:0.82rem;color:var(--text-muted);padding:0.4rem 1rem">✕ Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal nueva tarea -->
+<div id="tareaModal" class="modal-overlay" aria-hidden="true">
+  <div class="modal-card" style="max-width:754px;width:100%;max-height:90vh;overflow-y:auto" role="dialog" aria-modal="true" aria-labelledby="tareaModalTitle">
+    <h3 id="tareaModalTitle" class="modal-title">Nueva tarea</h3>
+    <div style="margin-top:0.85rem;display:flex;flex-direction:column;gap:0.75rem">
+      <!-- Responsable · Prioridad · Edificio en una sola fila -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem">
+        <div class="form-group" style="margin-bottom:0">
+          <label for="tareaNuevaResponsable">Responsable</label>
+          <select id="tareaNuevaResponsable">
+            <option value="">— sin asignar —</option>
+            <option value="Alberto">Alberto</option>
+            <option value="Antonio">Antonio</option>
+            <option value="Carlos">Carlos</option>
+            <option value="Harry">Harry</option>
+            <option value="Jaime">Jaime</option>
+            <option value="Juan">Juan</option>
+            <option value="Marta">Marta</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label for="tareaNuevaImportancia">Prioridad</label>
+          <select id="tareaNuevaImportancia">
+            <option value="baja">Baja</option>
+            <option value="media" selected>Media</option>
+            <option value="alta">Alta</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label for="tareaNuevaEdificio">Edificio</label>
+          <select id="tareaNuevaEdificio">
+            <option value="">— sin asignar —</option>
+            <option value="General">General</option>
+            <option value="La Fonda">La Fonda</option>
+            <option value="Iconic">Iconic</option>
+            <option value="Miosotis">Miosotis</option>
+            <option value="The Garden">The Garden</option>
+          </select>
+        </div>
+      </div>
+      <!-- Asunto -->
+      <div class="form-group" style="margin-bottom:0">
+        <label for="tareaNuevaAsunto" style="display:flex;justify-content:space-between;align-items:baseline">
+          <span>Asunto <span style="color:var(--error)">*</span></span>
+          <span id="asuntoWordCount" style="font-size:0.74rem;color:var(--text-muted);font-weight:400">0 / 10 palabras</span>
+        </label>
+        <input type="text" id="tareaNuevaAsunto" placeholder="Máximo 10 palabras" autocomplete="off">
+      </div>
+      <!-- Descripción -->
+      <div class="form-group" style="margin-bottom:0">
+        <label for="tareaNuevaComentario" style="display:flex;justify-content:space-between;align-items:baseline">
+          <span>Descripción <span style="color:var(--error)">*</span></span>
+          <span id="descWordCount" style="font-size:0.74rem;color:var(--text-muted);font-weight:400">0 palabras</span>
+        </label>
+        <textarea id="tareaNuevaComentario" rows="4" placeholder="Mínimo 10 palabras describiendo la incidencia…"></textarea>
+      </div>
+    </div>
+    <div class="status-msg" id="tareaFormMsg" style="margin-top:0.65rem"></div>
+    <div class="modal-actions" style="margin-top:1rem">
+      <button type="button" class="btn-secondary" id="tareaModalCancelarBtn" style="white-space:nowrap">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="tareaCrearBtn" style="flex:0;padding:0.65rem 1.1rem;white-space:nowrap">Guardar tarea</button>
+    </div>
+  </div>
+</div>
 
 <div id="confirmModal" class="modal-overlay" aria-hidden="true">
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle" aria-describedby="confirmModalDesc">
@@ -699,11 +1573,33 @@
 </div>
 
 <script>
+  // Mostrar email en el header y derivar nombre de usuario del email
+  function nombreDeEmail(email) {
+    const prefix = (email || '').split('@')[0];
+    if (!prefix) return '';
+    return prefix.charAt(0).toUpperCase() + prefix.slice(1).toLowerCase();
+  }
+
+  fetch('/api/me').then(r => r.json()).then(u => {
+    const elEmail = document.getElementById('headerUserEmail');
+    if (elEmail && u.email) elEmail.textContent = u.email;
+
+    const nombre = nombreDeEmail(u.email);
+    window.__miNombreUsuario = nombre;
+
+    const elName = document.getElementById('headerUserName');
+    if (elName && nombre) elName.textContent = nombre;
+  }).catch(() => {});
+
   const appLayout = document.querySelector('.app-layout');
   const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
   const viewCartas = document.getElementById('view-cartas');
   const viewCompetencia = document.getElementById('view-competencia');
+  const viewTareas = document.getElementById('view-tareas');
   const navButtons = document.querySelectorAll('.sidebar-item[data-nav]');
+
+  const VIEW_IDS = ['cartas', 'competencia', 'tareas'];
+  const viewByName = { cartas: viewCartas, competencia: viewCompetencia, tareas: viewTareas };
 
   function setSidebarCollapsed(collapsed) {
     appLayout.classList.toggle('sidebar-collapsed', collapsed);
@@ -727,11 +1623,14 @@
   })();
 
   function showView(name, { updateHash = true } = {}) {
-    const isCartas = name === 'cartas';
-    viewCartas.classList.toggle('hidden', !isCartas);
-    viewCompetencia.classList.toggle('hidden', isCartas);
-    viewCartas.setAttribute('aria-hidden', isCartas ? 'false' : 'true');
-    viewCompetencia.setAttribute('aria-hidden', isCartas ? 'true' : 'false');
+    if (!VIEW_IDS.includes(name)) name = 'cartas';
+
+    VIEW_IDS.forEach((id) => {
+      const el = viewByName[id];
+      const on = id === name;
+      el.classList.toggle('hidden', !on);
+      el.setAttribute('aria-hidden', on ? 'false' : 'true');
+    });
 
     navButtons.forEach((btn) => {
       const active = btn.dataset.nav === name;
@@ -743,9 +1642,17 @@
     if (updateHash && window.location.hash.slice(1) !== name) {
       window.location.hash = name;
     }
-    document.title = name === 'competencia'
-      ? 'Precios competencia — Fonda de los Príncipes'
-      : 'Fonda de los Príncipes — Admin';
+    if (name === 'competencia') {
+      document.title = 'Precios competencia — Fonda de los Príncipes';
+    } else if (name === 'tareas') {
+      document.title = 'Lista de tareas — Fonda de los Príncipes';
+    } else {
+      document.title = 'Fonda de los Príncipes — Admin';
+    }
+
+    if (name === 'tareas' && typeof window.__tareasOnShow === 'function') {
+      window.__tareasOnShow();
+    }
   }
 
   navButtons.forEach((btn) => {
@@ -754,15 +1661,13 @@
 
   window.addEventListener('hashchange', () => {
     const h = window.location.hash.slice(1);
-    if (h === 'competencia' || h === 'cartas') {
-      showView(h, { updateHash: false });
-    }
+    if (VIEW_IDS.includes(h)) showView(h, { updateHash: false });
   });
 
   (function initViewFromHash() {
     const h = window.location.hash.slice(1);
-    if (h === 'competencia') showView('competencia', { updateHash: false });
-    else showView('cartas', { updateHash: false });
+    if (VIEW_IDS.includes(h)) showView(h, { updateHash: false });
+    else showView('tareas', { updateHash: false });
   })();
 
   const dropZone = document.getElementById('dropZone');
@@ -980,6 +1885,31 @@
       .replaceAll('<', '&lt;')
       .replaceAll('>', '&gt;')
       .replaceAll('"', '&quot;');
+  }
+
+  /**
+   * Normaliza un texto: recorta espacios, elimina espacios múltiples,
+   * convierte todo-mayúsculas a minúsculas y capitaliza el inicio de cada oración.
+   */
+  function normalizeText(str) {
+    if (!str) return str;
+    let s = str.trim();
+    // Si todos los caracteres alfabéticos están en mayúsculas, pasar a minúsculas primero
+    const letras = s.replace(/[^a-záéíóúüña-z]/gi, '');
+    if (letras.length > 0 && letras === letras.toUpperCase()) {
+      s = s.toLowerCase();
+    }
+    // Colapsar espacios múltiples (salvo saltos de línea)
+    s = s.replace(/[^\S\n]+/g, ' ');
+    // Eliminar espacio antes de signos de puntuación
+    s = s.replace(/ ([.,;:!?»)])/g, '$1');
+    // Asegurar espacio después de signos de puntuación seguidos de letra
+    s = s.replace(/([.,;:!?])([^\s\d"»)\n])/g, '$1 $2');
+    // Capitalizar primera letra de cada oración (tras . ! ? al inicio o tras salto)
+    s = s.replace(/(^|[.!?]\s+|[\n])([a-záéíóúüñ])/g, (_, pre, ch) => pre + ch.toUpperCase());
+    // Capitalizar la primera letra global
+    s = s.charAt(0).toUpperCase() + s.slice(1);
+    return s;
   }
 
   function formatDateShort(isoDate) {
@@ -1364,6 +2294,653 @@
     } catch (err) {
       console.error('Error cargando últimos datos:', err);
     }
+  })();
+
+  (function initTareasView() {
+    const ESTADO_LABEL = { pendiente: 'Pendiente', en_proceso: 'En proceso', completado: 'Completado', cancelado: 'Cancelado' };
+    const IMP_LABEL    = { baja: 'Baja', media: 'Media', alta: 'Alta' };
+    const TODAY        = new Date().toISOString().slice(0, 10);
+    // ── Sort state ────────────────────────────────────────
+    let sortField = 'created_at';
+    let sortDir   = 'desc';
+
+    const SORT_FIELDS = ['estado', 'created_at', 'importancia', 'updated_at', 'ultimo_comentario'];
+
+    // ── DOM refs ──────────────────────────────────────────
+    const dbMsg          = document.getElementById('tareasDbMsg');
+    const tableBody      = document.getElementById('tareasTableBody');
+    const clearFiltrosBtn = document.getElementById('tareasClearFiltrosBtn');
+
+    // Filtros
+    const cfEstado      = document.getElementById('cf-estado');
+    const cfEdificio    = document.getElementById('cf-edificio');
+    const cfAsunto      = document.getElementById('cf-asunto');
+    const cfImportancia = document.getElementById('cf-importancia');
+    const cfResponsable = document.getElementById('cf-responsable');
+
+    // Modal nueva tarea
+    const tareaModal       = document.getElementById('tareaModal');
+    const abrirModalBtn    = document.getElementById('tareaAbrirModalBtn');
+    const cancelarModalBtn = document.getElementById('tareaModalCancelarBtn');
+    const crearBtn         = document.getElementById('tareaCrearBtn');
+    const formMsg          = document.getElementById('tareaFormMsg');
+
+    // Drawer
+    const drawer          = document.getElementById('tareasDetailDrawer');
+    const drawerOverlay   = document.getElementById('tareasDrawerOverlay');
+    const drawerCloseBtn  = document.getElementById('tareasDrawerCloseBtn');
+    const drawerTitle     = document.getElementById('drawerTareaTitle');
+    const editId          = document.getElementById('tareaEditId');
+    const editEstado      = document.getElementById('tareaEditEstado');
+    const editImportancia = document.getElementById('tareaEditImportancia');
+    const editEdificio    = document.getElementById('tareaEditEdificio');
+    const editResponsable = document.getElementById('tareaEditResponsable');
+    const editAsunto         = document.getElementById('tareaEditAsunto');
+    const editAsuntoBtn      = document.getElementById('tareaEditAsuntoBtn');
+    const editAsuntoWrap     = document.getElementById('tareaEditAsuntoWrap');
+    const asuntoConfirmBtn   = document.getElementById('tareaAsuntoConfirmBtn');
+    const asuntoCancelBtn    = document.getElementById('tareaAsuntoCancelBtn');
+
+    // ── Edición inline del asunto ─────────────────────────
+    function openAsuntoEdit() {
+      editAsuntoWrap.classList.add('visible');
+      editAsunto.focus();
+      editAsunto.select();
+    }
+    function closeAsuntoEdit() {
+      editAsuntoWrap.classList.remove('visible');
+    }
+
+    editAsuntoBtn.addEventListener('click', openAsuntoEdit);
+    asuntoCancelBtn.addEventListener('click', closeAsuntoEdit);
+
+    asuntoConfirmBtn.addEventListener('click', async () => {
+      const id = Number(document.getElementById('tareaEditId').value);
+      if (!id) return;
+      const nuevoAsunto = editAsunto.value.trim();
+      if (!nuevoAsunto) return;
+      try {
+        const res = await fetch('/api/tareas/' + id, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ asunto: nuevoAsunto }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Error al guardar');
+        drawerTitle.textContent = nuevoAsunto;
+        closeAsuntoEdit();
+        await loadTareasList();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
+    editAsunto.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') asuntoConfirmBtn.click();
+      if (e.key === 'Escape') closeAsuntoEdit();
+    });
+    editAsunto.addEventListener('blur', () => { editAsunto.value = normalizeText(editAsunto.value); });
+    const guardarBtn      = document.getElementById('tareaGuardarBtn');
+    const editMsg         = document.getElementById('tareaEditMsg');
+    const historialList   = document.getElementById('tareasHistorialList');
+    const historialTexto  = document.getElementById('tareaHistorialTexto');
+    const historialBtn    = document.getElementById('tareaHistorialBtn');
+    historialTexto.addEventListener('blur', () => { historialTexto.value = normalizeText(historialTexto.value); });
+
+    let tareasListCache = [];
+    let selectedId = null;
+
+    // Estado de filtros de columna (por defecto: activas)
+    const CF = { estado: 'activas', edificio: '', asunto: '', importancia: '', responsable: '' };
+
+    // ── Utils ──────────────────────────────────────────────
+    function fmtDate(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      return Number.isNaN(d.getTime()) ? '—'
+        : d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    }
+
+    function fmtDateTime(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      return Number.isNaN(d.getTime()) ? '—'
+        : `${d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' })} ${d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+
+    function showMsg(el, msg, type) {
+      el.textContent = msg || '';
+      el.className = msg ? 'status-msg ' + type : 'status-msg';
+    }
+
+
+    // ── Resumen ───────────────────────────────────────────
+
+    // ── Filtros de columna ────────────────────────────────
+    function syncCfFromUI() {
+      CF.estado      = cfEstado.value;
+      CF.edificio    = cfEdificio.value;
+      CF.asunto      = cfAsunto.value.trim();
+      CF.importancia = cfImportancia.value;
+      CF.responsable = cfResponsable.value;
+    }
+
+    [cfEstado, cfEdificio, cfImportancia, cfResponsable].forEach((el) => {
+      el.addEventListener('change', () => { syncCfFromUI(); updateClearBtn(); updateFilterCounts(); renderTable(sortRows(getFilteredRows())); });
+    });
+    cfAsunto.addEventListener('input', () => { syncCfFromUI(); updateClearBtn(); updateFilterCounts(); renderTable(sortRows(getFilteredRows())); });
+
+    clearFiltrosBtn.addEventListener('click', () => {
+      cfEstado.value      = 'activas';
+      cfEdificio.value    = '';
+      cfImportancia.value = '';
+      cfResponsable.value = '';
+      cfAsunto.value      = '';
+      syncCfFromUI();
+      updateClearBtn();
+      updateFilterCounts();
+      renderTable(sortRows(getFilteredRows()));
+    });
+
+    function updateClearBtn() {
+      const hasFilters = CF.estado !== 'activas' || CF.edificio || CF.importancia || CF.responsable || CF.asunto;
+      clearFiltrosBtn.classList.toggle('oculto', !hasFilters);
+    }
+
+    // ── Ordenación por columna ────────────────────────────
+    function sortRows(rows) {
+      if (!sortField) return rows;
+      return [...rows].sort((a, b) => {
+        let va = a[sortField] ?? '';
+        let vb = b[sortField] ?? '';
+        if (sortField === 'created_at' || sortField === 'updated_at') {
+          va = va ? new Date(va).getTime() : 0;
+          vb = vb ? new Date(vb).getTime() : 0;
+          return sortDir === 'asc' ? va - vb : vb - va;
+        }
+        const cmp = String(va).localeCompare(String(vb), 'es');
+        return sortDir === 'asc' ? cmp : -cmp;
+      });
+    }
+
+    function updateSortIcons() {
+      SORT_FIELDS.forEach((f) => {
+        const el = document.getElementById('si-' + f);
+        if (!el) return;
+        if (f === sortField) {
+          el.textContent = sortDir === 'asc' ? '↑' : '↓';
+          el.classList.add('si-active');
+        } else {
+          el.textContent = '⇅';
+          el.classList.remove('si-active');
+        }
+      });
+    }
+
+    document.querySelectorAll('.tasks-sort-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const field = btn.dataset.sort;
+        if (sortField === field) {
+          sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+          sortField = field;
+          sortDir = (field === 'created_at' || field === 'updated_at') ? 'desc' : 'asc';
+        }
+        updateSortIcons();
+        renderTable(sortRows(getFilteredRows()));
+      });
+    });
+
+    function getFilteredRows() {
+      let rows = tareasListCache;
+      if (CF.estado) {
+        if (CF.estado === 'activas') rows = rows.filter((r) => r.estado === 'pendiente' || r.estado === 'en_proceso');
+        else rows = rows.filter((r) => r.estado === CF.estado);
+      }
+      if (CF.edificio)    rows = rows.filter((r) => (r.edificio    || '') === CF.edificio);
+      if (CF.importancia) rows = rows.filter((r) => r.importancia === CF.importancia);
+      if (CF.responsable) rows = rows.filter((r) => (r.responsable || '') === CF.responsable);
+      if (CF.asunto) {
+        const q = CF.asunto.toLowerCase();
+        rows = rows.filter((r) =>
+          (r.asunto || '').toLowerCase().includes(q) ||
+          (r.ultimo_comentario || '').toLowerCase().includes(q) ||
+          (r.edificio || '').toLowerCase().includes(q),
+        );
+      }
+      return rows;
+    }
+
+    // ── Conteos en filtros ────────────────────────────────
+    function updateFilterCounts() {
+      const all = tareasListCache;
+      const n = (map, key) => map[key] || 0;
+
+      // Filtra aplicando todos los filtros excepto el indicado
+      function rowsExcept(skip) {
+        let rows = all;
+        if (skip !== 'estado' && CF.estado) {
+          if (CF.estado === 'activas') rows = rows.filter((r) => r.estado === 'pendiente' || r.estado === 'en_proceso');
+          else rows = rows.filter((r) => r.estado === CF.estado);
+        }
+        if (skip !== 'edificio'    && CF.edificio)    rows = rows.filter((r) => (r.edificio    || '') === CF.edificio);
+        if (skip !== 'importancia' && CF.importancia) rows = rows.filter((r) => r.importancia === CF.importancia);
+        if (skip !== 'responsable' && CF.responsable) rows = rows.filter((r) => (r.responsable || '') === CF.responsable);
+        if (skip !== 'asunto' && CF.asunto) {
+          const q = CF.asunto.toLowerCase();
+          rows = rows.filter((r) =>
+            (r.asunto || '').toLowerCase().includes(q) ||
+            (r.ultimo_comentario || '').toLowerCase().includes(q) ||
+            (r.edificio || '').toLowerCase().includes(q),
+          );
+        }
+        return rows;
+      }
+
+      // Estado — cuenta sobre todos los demás filtros activos
+      const baseEstado = rowsExcept('estado');
+      const ec = {};
+      for (const r of baseEstado) ec[r.estado] = (ec[r.estado] || 0) + 1;
+      const activas = n(ec,'pendiente') + n(ec,'en_proceso');
+      cfEstado.options[0].text = `Estado: Activas (${activas})`;
+      cfEstado.options[1].text = `Estado: Todos (${baseEstado.length})`;
+      cfEstado.options[2].text = `Pendiente (${n(ec,'pendiente')})`;
+      cfEstado.options[3].text = `En proceso (${n(ec,'en_proceso')})`;
+      cfEstado.options[4].text = `Completado (${n(ec,'completado')})`;
+      cfEstado.options[5].text = `Cancelado (${n(ec,'cancelado')})`;
+
+      // Edificio — cuenta sobre todos los demás filtros activos
+      const baseEdificio = rowsExcept('edificio');
+      const edc = {};
+      for (const r of baseEdificio) { const e = r.edificio || ''; if (e) edc[e] = (edc[e] || 0) + 1; }
+      cfEdificio.options[0].text = `Edificio: Todos (${baseEdificio.length})`;
+      cfEdificio.options[1].text = `General (${n(edc,'General')})`;
+      cfEdificio.options[2].text = `La Fonda (${n(edc,'La Fonda')})`;
+      cfEdificio.options[3].text = `Iconic (${n(edc,'Iconic')})`;
+      cfEdificio.options[4].text = `Miosotis (${n(edc,'Miosotis')})`;
+      cfEdificio.options[5].text = `The Garden (${n(edc,'The Garden')})`;
+
+      // Importancia — cuenta sobre todos los demás filtros activos
+      const baseImportancia = rowsExcept('importancia');
+      const ic = {};
+      for (const r of baseImportancia) ic[r.importancia] = (ic[r.importancia] || 0) + 1;
+      cfImportancia.options[0].text = `Urgencia: Todas (${baseImportancia.length})`;
+      cfImportancia.options[1].text = `Alta (${n(ic,'alta')})`;
+      cfImportancia.options[2].text = `Media (${n(ic,'media')})`;
+      cfImportancia.options[3].text = `Baja (${n(ic,'baja')})`;
+
+      // Responsable — cuenta sobre todos los demás filtros activos
+      const baseResponsable = rowsExcept('responsable');
+      const rc = {};
+      for (const r of baseResponsable) { const v = r.responsable || ''; if (v) rc[v] = (rc[v] || 0) + 1; }
+      const NOMBRES = ['Alberto','Antonio','Carlos','Harry','Jaime','Juan','Marta'];
+      cfResponsable.options[0].text = `Owner: Todos (${baseResponsable.length})`;
+      NOMBRES.forEach((nombre, i) => {
+        cfResponsable.options[i + 1].text = `${nombre} (${n(rc, nombre)})`;
+      });
+    }
+
+    // ── Carga de tareas ───────────────────────────────────
+    function buildQuery() {
+      return 'ordenar=orden&direccion=asc';
+    }
+
+    async function loadTareasList() {
+      dbMsg.style.display = 'none';
+      const res = await fetch('/api/tareas?' + buildQuery());
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { data = {}; }
+      if (res.status === 503) {
+        dbMsg.textContent = data.error || 'Base de datos no disponible.';
+        dbMsg.style.display = 'block';
+        tableBody.innerHTML = '';
+        tareasListCache = [];
+        return;
+      }
+      if (!res.ok) {
+        dbMsg.textContent = data.error || 'No se pudieron cargar las tareas.';
+        dbMsg.style.display = 'block';
+        tableBody.innerHTML = '';
+        tareasListCache = [];
+        return;
+      }
+      tareasListCache = Array.isArray(data) ? data : [];
+      updateSortIcons();
+      updateFilterCounts();
+      renderTable(sortRows(getFilteredRows()));
+    }
+
+
+    // ── Tabla ─────────────────────────────────────────────
+    // Opciones para los selects inline
+    const INLINE_OPTS = {
+      edificio:   [['','—'],['General','General'],['La Fonda','La Fonda'],['Iconic','Iconic'],['Miosotis','Miosotis'],['The Garden','The Garden']],
+      importancia:[['alta','Alta'],['media','Media'],['baja','Baja']],
+      estado:     [['pendiente','Pendiente'],['en_proceso','En proceso'],['completado','Completado'],['cancelado','Cancelado']],
+      responsable:[['','— sin asignar —'],['Alberto','Alberto'],['Antonio','Antonio'],['Carlos','Carlos'],['Harry','Harry'],['Jaime','Jaime'],['Juan','Juan'],['Marta','Marta']],
+    };
+
+    function renderTable(rows) {
+      if (!rows.length) {
+        tableBody.innerHTML =
+          '<tr><td colspan="10" style="padding:1.2rem;text-align:center;color:#64748b">No hay tareas con estos filtros.</td></tr>';
+        return;
+      }
+      tableBody.innerHTML = rows.map((r) => {
+        const estadoBadge = `<span class="badge badge-${r.estado}">${escapeHtml(ESTADO_LABEL[r.estado] || r.estado)}</span>`;
+        const impBadge    = `<span class="badge badge-imp-${r.importancia}">${escapeHtml(IMP_LABEL[r.importancia] || r.importancia)}</span>`;
+
+        const coment = r.ultimo_comentario
+          ? escapeHtml(String(r.ultimo_comentario).slice(0, 180)) + (String(r.ultimo_comentario).length > 180 ? '…' : '')
+          : '<span class="price-empty">—</span>';
+
+        return `<tr data-task-id="${r.id}" class="${selectedId === r.id ? 'tareas-row-selected' : ''}">
+          <td class="cell-asunto">${escapeHtml(r.asunto || '')}</td>
+          <td class="cell-date">${escapeHtml(fmtDate(r.created_at))}</td>
+          <td class="cell-inline" data-field="edificio" data-value="${escapeHtml(r.edificio||'')}">${escapeHtml(r.edificio || '—')}</td>
+          <td class="cell-inline" data-field="importancia" data-value="${escapeHtml(r.importancia||'')}">${impBadge}</td>
+          <td class="cell-inline" data-field="estado" data-value="${escapeHtml(r.estado||'')}">${estadoBadge}</td>
+          <td class="cell-inline" data-field="responsable" data-value="${escapeHtml(r.responsable||'')}">${escapeHtml(r.responsable || '—')}</td>
+          <td class="cell-date">${escapeHtml(fmtDate(r.updated_at))}</td>
+          <td class="cell-coment">${coment}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    // Edición inline al hacer clic en celdas editables
+    tableBody.addEventListener('click', (e) => {
+      if (e.target.closest('.tarea-mover')) return;
+
+      const cell = e.target.closest('.cell-inline');
+      if (cell) {
+        // Evitar abrir drawer
+        e.stopPropagation();
+        openInlineSelect(cell);
+        return;
+      }
+
+      const tr = e.target.closest('tr[data-task-id]');
+      if (!tr) return;
+      openDrawer(Number(tr.dataset.taskId));
+    });
+
+    function openInlineSelect(cell) {
+      if (cell.querySelector('select')) return; // ya abierto
+      const field    = cell.dataset.field;
+      const value    = cell.dataset.value;
+      const taskId   = cell.closest('tr').dataset.taskId;
+      const original = cell.innerHTML;
+      const opts     = INLINE_OPTS[field] || [];
+
+      const sel = document.createElement('select');
+      sel.className = 'cell-inline-select';
+      opts.forEach(([v, label]) => {
+        const opt = document.createElement('option');
+        opt.value = v; opt.textContent = label;
+        if (v === value) opt.selected = true;
+        sel.appendChild(opt);
+      });
+
+      cell.innerHTML = '';
+      cell.appendChild(sel);
+      sel.focus();
+
+      async function save() {
+        const newVal = sel.value;
+        if (newVal === value) { cell.innerHTML = original; return; }
+        try {
+          const res = await fetch('/api/tareas/' + taskId, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ [field]: newVal }),
+          });
+          if (!res.ok) throw new Error();
+          await loadTareasList();
+          if (selectedId === Number(taskId)) await loadDrawerData(Number(taskId));
+        } catch {
+          cell.innerHTML = original;
+        }
+      }
+
+      sel.addEventListener('change', save);
+      sel.addEventListener('blur', () => { if (sel.value === value) cell.innerHTML = original; });
+      sel.addEventListener('keydown', (e) => { if (e.key === 'Escape') { cell.innerHTML = original; } });
+    }
+
+    async function moverTask(id, direccion) {
+      if (!id || !direccion) return;
+      try {
+        const res = await fetch('/api/tareas/' + id + '/mover', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ direccion }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'No se pudo reordenar');
+        await loadTareasList();
+        if (selectedId === id) await loadDrawerData(id);
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // ── Modal nueva tarea ─────────────────────────────────
+    function openModal() {
+      tareaModal.classList.add('visible');
+      tareaModal.setAttribute('aria-hidden', 'false');
+      showMsg(formMsg, '', '');
+      document.getElementById('tareaNuevaResponsable').value = '';
+      document.getElementById('tareaNuevaAsunto').focus();
+    }
+
+    function closeModal() {
+      tareaModal.classList.remove('visible');
+      tareaModal.setAttribute('aria-hidden', 'true');
+      showMsg(formMsg, '', '');
+      document.getElementById('tareaNuevaImportancia').value = 'media';
+      document.getElementById('tareaNuevaEdificio').value    = '';
+      document.getElementById('tareaNuevaResponsable').value = '';
+      document.getElementById('tareaNuevaAsunto').value      = '';
+      document.getElementById('tareaNuevaComentario').value  = '';
+      // Resetear contadores (se actualizan después de que existan los elementos)
+      if (document.getElementById('asuntoWordCount'))
+        document.getElementById('asuntoWordCount').textContent = `0 / 10 palabras`;
+      if (document.getElementById('descWordCount'))
+        document.getElementById('descWordCount').textContent = `0 palabras`;
+    }
+
+    abrirModalBtn.addEventListener('click', openModal);
+    cancelarModalBtn.addEventListener('click', closeModal);
+    tareaModal.addEventListener('click', (e) => { if (e.target === tareaModal) closeModal(); });
+
+    // Contadores de palabras en tiempo real
+    function countWords(str) {
+      return str.trim() === '' ? 0 : str.trim().split(/\s+/).length;
+    }
+
+    const asuntoInput    = document.getElementById('tareaNuevaAsunto');
+    const comentarioTA   = document.getElementById('tareaNuevaComentario');
+    const asuntoCounter  = document.getElementById('asuntoWordCount');
+    const descCounter    = document.getElementById('descWordCount');
+    const MAX_ASUNTO     = 10;
+    const MIN_DESC       = 10;
+
+    function updateAsuntoCounter() {
+      const words = countWords(asuntoInput.value);
+      asuntoCounter.textContent = `${words} / ${MAX_ASUNTO} palabras`;
+      asuntoCounter.style.color = words > MAX_ASUNTO ? 'var(--error)' : 'var(--text-muted)';
+    }
+
+    function updateDescCounter() {
+      const words = countWords(comentarioTA.value);
+      descCounter.textContent = `${words} palabras`;
+      descCounter.style.color = words > 0 && words < MIN_DESC ? 'var(--error)' : 'var(--text-muted)';
+    }
+
+    asuntoInput.addEventListener('input', updateAsuntoCounter);
+    comentarioTA.addEventListener('input', updateDescCounter);
+
+    // Normalizar texto al salir de los campos de texto del modal y el drawer
+    asuntoInput.addEventListener('blur', () => { asuntoInput.value = normalizeText(asuntoInput.value); updateAsuntoCounter(); });
+    comentarioTA.addEventListener('blur', () => { comentarioTA.value = normalizeText(comentarioTA.value); updateDescCounter(); });
+
+    crearBtn.addEventListener('click', async () => {
+      showMsg(formMsg, '', '');
+      const asunto = normalizeText(document.getElementById('tareaNuevaAsunto').value.trim());
+      if (!asunto) { showMsg(formMsg, 'El asunto es obligatorio.', 'error'); return; }
+      if (countWords(asunto) > MAX_ASUNTO) { showMsg(formMsg, `El asunto no puede superar ${MAX_ASUNTO} palabras.`, 'error'); return; }
+      const descripcion = normalizeText(document.getElementById('tareaNuevaComentario').value.trim());
+      if (!descripcion) { showMsg(formMsg, 'La descripción es obligatoria.', 'error'); return; }
+      if (countWords(descripcion) < MIN_DESC) { showMsg(formMsg, `La descripción debe tener al menos ${MIN_DESC} palabras.`, 'error'); return; }
+      const body = {
+        estado:             'pendiente',
+        edificio:           document.getElementById('tareaNuevaEdificio').value,
+        importancia:        document.getElementById('tareaNuevaImportancia').value,
+        responsable:        document.getElementById('tareaNuevaResponsable').value,
+        fecha_limite:       null,
+        asunto,
+        comentario_inicial: descripcion,
+        autor:              window.__miNombreUsuario || '',
+      };
+      try {
+        const res = await fetch('/api/tareas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'No se pudo crear');
+        closeModal();
+        await loadTareasList();
+        openDrawer(data.id);
+      } catch (err) {
+        showMsg(formMsg, err.message, 'error');
+      }
+    });
+
+    // ── Drawer ────────────────────────────────────────────
+    function setDrawerOpen(open) {
+      drawer.classList.toggle('open', open);
+      drawerOverlay.classList.toggle('open', open);
+      if (!open) {
+        selectedId = null;
+        renderTable(sortRows(getFilteredRows()));
+      }
+    }
+
+    function closeDrawer() {
+      setDrawerOpen(false);
+      closeAsuntoEdit();
+      showMsg(editMsg, '', '');
+      historialTexto.value = '';
+    }
+
+    drawerCloseBtn.addEventListener('click', closeDrawer);
+    drawerOverlay.addEventListener('click', () => {
+      if (!tareaModal.classList.contains('visible')) closeDrawer();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      if (tareaModal.classList.contains('visible')) { closeModal(); return; }
+      if (drawer.classList.contains('open')) closeDrawer();
+    });
+
+    async function openDrawer(id) {
+      if (!id) return;
+      selectedId = id;
+      setDrawerOpen(true);
+      showMsg(editMsg, '', '');
+      historialTexto.value = '';
+      renderTable(sortRows(getFilteredRows()));
+      await loadDrawerData(id);
+    }
+
+    async function loadDrawerData(id) {
+      const res = await fetch('/api/tareas/' + id);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showMsg(editMsg, data.error || 'No se pudo cargar la tarea.', 'error');
+        return;
+      }
+      drawerTitle.textContent = data.asunto || `Tarea #${data.id}`;
+      editId.value            = String(data.id);
+      editEstado.value        = data.estado;
+      editImportancia.value   = data.importancia;
+      editEdificio.value      = data.edificio    || '';
+      editResponsable.value   = data.responsable || '';
+      editAsunto.value        = data.asunto      || '';
+
+      const hist = Array.isArray(data.historial) ? data.historial : [];
+      if (!hist.length) {
+        historialList.innerHTML = '<li style="color:#64748b;font-size:0.8rem;padding:0.5rem 0">Sin entradas todavía.</li>';
+      } else {
+        historialList.innerHTML = [...hist].reverse().map((h) => {
+          const meta = `${fmtDateTime(h.created_at)}${h.autor ? ' · ' + escapeHtml(h.autor) : ''}`;
+          return `<li><div class="meta">${escapeHtml(meta)}</div><div>${escapeHtml(h.texto).replaceAll('\n', '<br>')}</div></li>`;
+        }).join('');
+      }
+    }
+
+    guardarBtn.addEventListener('click', async () => {
+      const id = Number(editId.value);
+      if (!id) return;
+      showMsg(editMsg, '', '');
+      try {
+        const res = await fetch('/api/tareas/' + id, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            estado:       editEstado.value,
+            importancia:  editImportancia.value,
+            edificio:     editEdificio.value,
+            responsable:  editResponsable.value,
+            asunto:       normalizeText(editAsunto.value.trim()),
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Error al guardar');
+        showMsg(editMsg, 'Cambios guardados.', 'success');
+        await loadTareasList();
+        await loadDrawerData(id);
+      } catch (err) {
+        showMsg(editMsg, err.message, 'error');
+      }
+    });
+
+    historialBtn.addEventListener('click', async () => {
+      const id = Number(editId.value);
+      if (!id) return;
+      const texto = normalizeText(historialTexto.value.trim());
+      if (!texto) { showMsg(editMsg, 'Escribe una nota para el historial.', 'error'); return; }
+      showMsg(editMsg, '', '');
+      try {
+        const res = await fetch('/api/tareas/' + id + '/historial', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ texto, autor: window.__miNombreUsuario || '' }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Error al guardar');
+        historialTexto.value = '';
+        showMsg(editMsg, 'Nota añadida.', 'success');
+        await loadTareasList();
+        await loadDrawerData(id);
+      } catch (err) {
+        showMsg(editMsg, err.message, 'error');
+      }
+    });
+
+    // ── Init: cargar lista al entrar en la vista ──────────
+    updateSortIcons();
+    updateClearBtn();
+    if (!document.getElementById('view-tareas').classList.contains('hidden')) {
+      loadTareasList();
+    }
+    window.__tareasOnShow = function () {
+      loadTareasList();
+    };
   })();
 </script>
 
