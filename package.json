@@ -5,7 +5,9 @@
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
-    "dev": "node --watch server/server.js"
+    "dev": "node --watch server/server.js",
+    "import:reviews": "node scripts/import-reviews-csv.js",
+    "backup:db": "node scripts/backup-turso-db.js"
   },
   "keywords": [],
   "author": "",
@@ -16,10 +18,12 @@
     "@sparticuz/chromium-min": "^143.0.4",
     "archiver": "^7.0.1",
     "cookie-parser": "^1.4.7",
+    "csv-parse": "^6.2.1",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.1.1",
+    "openai": "^6.34.0",
     "puppeteer": "^24.40.0",
     "puppeteer-core": "^24.40.0",
     "tesseract.js": "^7.0.0",

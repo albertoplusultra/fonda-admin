@@ -658,6 +658,69 @@
       justify-content: flex-end;
     }
 
+    .ia-modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.35rem;
+    }
+    .ia-modal-header .modal-title {
+      margin-bottom: 0;
+    }
+    .ia-modal-close {
+      flex-shrink: 0;
+      margin: -0.15rem -0.25rem 0 0;
+      padding: 0.2rem 0.45rem;
+      border: none;
+      background: transparent;
+      color: var(--text-muted, #64748b);
+      font-size: 1.65rem;
+      line-height: 1;
+      font-weight: 300;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .ia-modal-close:hover {
+      background: rgba(15, 23, 42, 0.08);
+      color: var(--text, #1e293b);
+    }
+
+    #iaAskInputSection {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+    #iaAskInputSection textarea {
+      width: 100%;
+      box-sizing: border-box;
+    }
+    #iaAskOutputSection {
+      display: none;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    #iaAskPreguntaLabel {
+      font-size: 0.83rem;
+      font-weight: 600;
+      color: var(--text-muted, #888);
+      padding: 0.5rem 0.75rem;
+      background: var(--bg, #f1f5f9);
+      border-radius: 6px;
+      border-left: 3px solid var(--accent, #2563eb);
+    }
+    #opinionesAskResult {
+      overflow-y: auto;
+      background: var(--bg, #f8fafc);
+      border: 1px solid var(--border, #e5e7eb);
+      border-radius: 8px;
+      padding: 1rem;
+      font-size: 0.88rem;
+      line-height: 1.65;
+      color: var(--text, #1e293b);
+    }
+
     .btn-secondary {
       background: #eef2f7;
       color: #334155;
@@ -1133,10 +1196,86 @@
     }
     .opiniones-text-cell {
       max-width: 380px;
-      white-space: pre-wrap;
+    }
+    .opiniones-text-inner {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
       word-break: break-word;
       line-height: 1.45;
+      cursor: pointer;
+      white-space: normal;
     }
+    .opiniones-text-inner.expanded {
+      display: block;
+      overflow: visible;
+      white-space: pre-wrap;
+    }
+    .opiniones-body-full,
+    .opiniones-body-resumen {
+      display: block;
+      word-break: break-word;
+    }
+    #view-opiniones.op-mode-resumen .opiniones-body-full {
+      display: none !important;
+    }
+    #view-opiniones.op-mode-full .opiniones-body-resumen {
+      display: none !important;
+    }
+    .opiniones-sin-resumen {
+      color: var(--text-muted, #888);
+      font-style: italic;
+    }
+    .ia-quick-btn {
+      padding: 0.3rem 0.65rem;
+      border: 1px solid var(--border,#ddd);
+      border-radius: 20px;
+      background: var(--bg-card,#fff);
+      color: var(--text,#333);
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .ia-quick-btn:hover { background: var(--accent-light,#e0eaff); border-color: var(--accent,#2563eb); color: var(--accent,#2563eb); }
+
+    @keyframes ia-spin { to { transform: rotate(360deg); } }
+    .ia-thinking {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.85rem;
+      color: var(--text-muted, #888);
+      padding: 1.5rem 0;
+    }
+    .ia-thinking-spinner {
+      width: 18px; height: 18px;
+      border: 2px solid var(--border, #ddd);
+      border-top-color: var(--accent, #2563eb);
+      border-radius: 50%;
+      animation: ia-spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    .ia-thinking-dots::after {
+      content: '';
+      animation: ia-dots 1.4s steps(4, end) infinite;
+    }
+    @keyframes ia-dots {
+      0%   { content: ''; }
+      25%  { content: '.'; }
+      50%  { content: '..'; }
+      75%  { content: '...'; }
+      100% { content: ''; }
+    }
+    #opinionesAskResult p  { margin: 0 0 0.5rem; }
+    #opinionesAskResult ul,
+    #opinionesAskResult ol { margin: 0 0 0.5rem 1.2rem; padding: 0; }
+    #opinionesAskResult li { margin-bottom: 0.2rem; }
+    #opinionesAskResult strong { font-weight: 600; }
+    #opinionesAskResult h1,
+    #opinionesAskResult h2,
+    #opinionesAskResult h3 { font-size: 0.95rem; font-weight: 700; margin: 0.6rem 0 0.3rem; }
     .opiniones-stars {
       font-size: 1rem;
       letter-spacing: 0.05em;
@@ -1446,6 +1585,9 @@
       }
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@13/marked.min.js"></script>
 </head>
 <body>
 
@@ -1468,6 +1610,9 @@
       <button type="button" class="sidebar-item" data-nav="tareas">
         Tareas pendientes
       </button>
+      <button type="button" class="sidebar-item" data-nav="opiniones">
+        Opiniones
+      </button>
       <button type="button" class="sidebar-item" data-nav="cartas">
         Crear cartas de bienvenida
       </button>
@@ -1475,9 +1620,6 @@
       <span class="sidebar-section-label sidebar-test-only">En test</span>
       <button type="button" class="sidebar-item sidebar-test-only" data-nav="competencia">
         Precios competencia
-      </button>
-      <button type="button" class="sidebar-item sidebar-test-only" data-nav="opiniones">
-        Opiniones
       </button>
     </nav>
   </aside>
@@ -1530,41 +1672,75 @@
     </div>
     </section>
 
-    <section class="view view--opiniones hidden" id="view-opiniones" aria-labelledby="title-opiniones" aria-hidden="true">
+    <section class="view view--opiniones hidden op-mode-resumen" id="view-opiniones" aria-labelledby="title-opiniones" aria-hidden="true">
     <div class="card card-wide card-flat">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
         <div>
           <h2 class="card-title" id="title-opiniones" style="margin-bottom:0.25rem">Opiniones</h2>
-          <p id="opinionesLastUpdate" class="card-desc" style="margin:0;font-size:0.85rem">Última actualización: —</p>
+          <p class="card-desc" style="margin:0;font-size:0.85rem;display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap">
+            <span id="opinionesLastUpdate">Última actualización: —</span>
+            <span style="color:var(--text-muted,#ccc)">·</span>
+            <button id="opinionesCargarBtn" type="button" style="background:none;border:none;padding:0;font-size:0.85rem;color:var(--text-muted,#888);text-decoration:underline;cursor:pointer;font-family:inherit">Cargar opiniones</button>
+          </p>
         </div>
         <div style="display:flex;gap:0.75rem;align-items:center;flex-shrink:0;flex-wrap:wrap">
-          <div id="opinionesSourceTags" style="display:flex;gap:0.4rem"></div>
-          <button class="btn btn-primary" id="opinionesBtn" type="button" style="white-space:nowrap;padding:0.65rem 1rem">
-            <span id="opinionesBtnText">Recibir opiniones nuevas</span>
+          <button class="btn" id="opinionesIaBtn" type="button" style="white-space:nowrap;padding:0.65rem 1rem;background:#1e293b;color:#fff;border-color:#1e293b">
+            Preguntar a la IA
           </button>
         </div>
       </div>
 
-      <div id="opinionesConfigWarning" class="status-msg" style="display:none;margin-top:0.75rem"></div>
       <div id="opinionesStatusMsg" class="status-msg" style="display:none;margin-top:0.75rem"></div>
 
-      <!-- Filtros por fuente -->
-      <div id="opinionesFiltros" style="display:flex;gap:0.5rem;margin-top:1rem;flex-wrap:wrap">
-        <button class="opiniones-filtro-btn active" data-source="">Todas</button>
-        <button class="opiniones-filtro-btn" data-source="booking">Booking</button>
-        <button class="opiniones-filtro-btn" data-source="google">Google</button>
-        <button class="opiniones-filtro-btn" data-source="tripadvisor">TripAdvisor</button>
+      <!-- Filtros -->
+      <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:1rem">
+        <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+          <span style="font-size:0.78rem;font-weight:600;color:var(--text-muted,#888);min-width:80px">Alojamiento</span>
+          <div id="opinionesFiltrosAloj" style="display:flex;gap:0.4rem;flex-wrap:wrap">
+            <button class="opiniones-filtro-btn active" data-aloj="" data-label="Todos">Todos</button>
+            <button class="opiniones-filtro-btn" data-aloj="La Fonda de los Príncipes" data-label="La Fonda">La Fonda</button>
+            <button class="opiniones-filtro-btn" data-aloj="Iconic Suites" data-label="Iconic">Iconic</button>
+            <button class="opiniones-filtro-btn" data-aloj="Miosotis Suites" data-label="Miosotis">Miosotis</button>
+            <button class="opiniones-filtro-btn" data-aloj="The Garden Suites" data-label="The Garden">The Garden</button>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+          <span style="font-size:0.78rem;font-weight:600;color:var(--text-muted,#888);min-width:80px">Fuente</span>
+          <div id="opinionesFiltrosFuente" style="display:flex;gap:0.4rem;flex-wrap:wrap">
+            <button class="opiniones-filtro-btn active" data-source="" data-label="Todas">Todas</button>
+            <button class="opiniones-filtro-btn" data-source="booking" data-label="Booking">Booking</button>
+            <button class="opiniones-filtro-btn" data-source="google" data-label="Google">Google</button>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+          <span style="font-size:0.78rem;font-weight:600;color:var(--text-muted,#888);min-width:80px">Texto</span>
+          <div id="opinionesVistaBtns" style="display:flex;gap:0.4rem;flex-wrap:wrap" role="group" aria-label="Mostrar resumen u opinión completa">
+            <button type="button" class="opiniones-filtro-btn active" data-op-vista="resumen">Resumen</button>
+            <button type="button" class="opiniones-filtro-btn" data-op-vista="full">Completo</button>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+          <span style="font-size:0.78rem;font-weight:600;color:var(--text-muted,#888);min-width:80px">Gráfica</span>
+          <div id="opinionesChartGranBtns" style="display:flex;gap:0.4rem;flex-wrap:wrap" role="group" aria-label="Agrupar la gráfica por meses o semanas">
+            <button type="button" class="opiniones-filtro-btn active" data-chart-gran="month">Meses</button>
+            <button type="button" class="opiniones-filtro-btn" data-chart-gran="week">Semanas</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="opinionesChartWrap" style="display:none;margin-top:1.25rem;position:relative;height:230px">
+        <canvas id="opinionesChart"></canvas>
       </div>
 
       <div id="opinionesTableWrap" class="table-wrap" style="margin-top:0.75rem;display:none">
         <table class="opiniones-table" id="opinionesTable">
           <thead>
             <tr>
-              <th style="width:110px">Fuente</th>
-              <th style="width:105px">Fecha</th>
-              <th style="width:120px">Autor</th>
+              <th style="width:1%;white-space:nowrap">Edificio</th>
+              <th style="width:1%;white-space:nowrap">Fuente</th>
+              <th style="width:1%;white-space:nowrap">Fecha</th>
               <th style="min-width:200px">Opinión</th>
-              <th style="width:90px;text-align:center">Valoración</th>
+              <th style="width:1%;white-space:nowrap;text-align:center">Nota</th>
             </tr>
           </thead>
           <tbody id="opinionesTbody"></tbody>
@@ -1572,10 +1748,103 @@
       </div>
 
       <p id="opinionesEmpty" style="display:none;text-align:center;color:var(--text-muted,#888);padding:2rem 0">
-        No hay opiniones guardadas. Pulsa «Recibir opiniones nuevas» para importarlas.
+        No hay opiniones guardadas. Pulsa «Cargar opiniones» (junto a la fecha de actualización) para subir un CSV.
       </p>
+
+      <div id="opinionesLoadMore" style="display:none;text-align:center;padding:1rem 0">
+        <button type="button" id="opinionesLoadMoreBtn" class="btn-secondary">Cargar más</button>
+        <p id="opinionesLoadMoreInfo" style="margin:0.4rem 0 0;font-size:0.82rem;color:var(--text-muted,#888)"></p>
+      </div>
+
     </div>
     </section>
+
+    <!-- ── Modal Asistente IA ─────────────────────────────────────────── -->
+    <div id="iaModal" class="modal-overlay" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="iaModalTitle" style="width:min(1012px,95vw);max-width:min(1012px,95vw);max-height:90vh;display:flex;flex-direction:column;overflow:hidden">
+        <div class="ia-modal-header">
+          <h3 id="iaModalTitle" class="modal-title">Preguntar a la IA</h3>
+          <button type="button" id="iaModalCancelar" class="ia-modal-close" aria-label="Cerrar">×</button>
+        </div>
+
+        <!-- Sección input (filtros + preguntas rápidas + textarea) -->
+        <div id="iaAskInputSection" style="display:flex;flex-direction:column;gap:0.75rem;overflow-y:auto;flex:1;min-height:0">
+
+          <!-- Filtros -->
+          <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:flex-end">
+            <div style="display:flex;flex-direction:column;gap:0.25rem">
+              <label for="askAlojSelect" style="font-size:0.75rem;font-weight:600;color:var(--text-muted,#888)">Edificio</label>
+              <select id="askAlojSelect" style="padding:0.4rem 0.6rem;border:1px solid var(--border,#ddd);border-radius:6px;font-size:0.83rem;background:var(--bg-card,#fff);color:var(--text,#333)">
+                <option value="">Todos</option>
+                <option value="La Fonda de los Príncipes">La Fonda</option>
+                <option value="Iconic Suites">Iconic</option>
+                <option value="Miosotis Suites">Miosotis</option>
+                <option value="The Garden Suites">The Garden</option>
+              </select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:0.25rem">
+              <label for="askFuenteSelect" style="font-size:0.75rem;font-weight:600;color:var(--text-muted,#888)">Fuente</label>
+              <select id="askFuenteSelect" style="padding:0.4rem 0.6rem;border:1px solid var(--border,#ddd);border-radius:6px;font-size:0.83rem;background:var(--bg-card,#fff);color:var(--text,#333)">
+                <option value="">Todas</option>
+                <option value="booking">Booking</option>
+                <option value="google">Google</option>
+              </select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:0.25rem">
+              <label for="askLimitSelect" style="font-size:0.75rem;font-weight:600;color:var(--text-muted,#888)">Opiniones</label>
+              <select id="askLimitSelect" style="padding:0.4rem 0.6rem;border:1px solid var(--border,#ddd);border-radius:6px;font-size:0.83rem;background:var(--bg-card,#fff);color:var(--text,#333)">
+                <option value="0" selected>Todas</option>
+                <option value="10">10 más recientes</option>
+                <option value="30">30 más recientes</option>
+                <option value="50">50 más recientes</option>
+                <option value="100">100 más recientes</option>
+                <option value="200">200 más recientes</option>
+              </select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:0.25rem">
+              <label for="askTextoSelect" style="font-size:0.75rem;font-weight:600;color:var(--text-muted,#888)">Analizar</label>
+              <select id="askTextoSelect" style="padding:0.4rem 0.6rem;border:1px solid var(--border,#ddd);border-radius:6px;font-size:0.83rem;background:var(--bg-card,#fff);color:var(--text,#333)">
+                <option value="resumen" selected>Resumen</option>
+                <option value="completo">Completo</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Preguntas rápidas -->
+          <div>
+            <p style="font-size:0.75rem;font-weight:600;color:var(--text-muted,#888);margin:0 0 0.4rem">Preguntas rápidas</p>
+            <div style="display:flex;flex-wrap:wrap;gap:0.4rem">
+              <button type="button" class="ia-quick-btn">¿Cuáles son los problemas principales de cada edificio en el último mes?</button>
+              <button type="button" class="ia-quick-btn">¿Cuál es la queja más repetida?</button>
+              <button type="button" class="ia-quick-btn">¿Qué aspectos destacan positivamente los huéspedes?</button>
+              <button type="button" class="ia-quick-btn">¿Cómo valoran la limpieza y el personal?</button>
+              <button type="button" class="ia-quick-btn">¿Hay quejas sobre el ruido o la ubicación?</button>
+              <button type="button" class="ia-quick-btn">¿Cuál es la tendencia de la nota media en los últimos meses?</button>
+            </div>
+          </div>
+
+          <!-- Textarea + botón -->
+          <textarea id="opinionesAskInput"
+            placeholder="Escribe tu pregunta o pulsa una de las sugerencias…"
+            rows="4"
+            style="resize:vertical;padding:0.7rem 0.85rem;border:1px solid var(--border,#ddd);border-radius:8px;font-size:0.9rem;font-family:inherit;background:var(--bg-card,#fff);color:var(--text,#333);line-height:1.6;min-height:90px;width:100%;box-sizing:border-box"
+          ></textarea>
+          <div style="display:flex;justify-content:flex-end">
+            <button type="button" id="opinionesAskBtn" class="btn btn-primary">Preguntar</button>
+          </div>
+        </div>
+
+        <!-- Sección respuesta (ocupa todo el modal) -->
+        <div id="iaAskOutputSection" style="display:none;flex-direction:column;flex:1;min-height:0;gap:0.6rem;overflow:hidden">
+          <div id="iaAskPreguntaLabel"></div>
+          <div id="opinionesAskStatus" style="display:none;font-size:0.82rem;color:var(--text-muted,#888)"></div>
+          <div id="opinionesAskResult" style="flex:1;min-height:0;overflow-y:auto"></div>
+          <div style="display:flex;justify-content:flex-end;padding-top:0.5rem;border-top:1px solid var(--border,#e5e7eb);flex-shrink:0">
+            <button type="button" id="iaOtraPreguntaBtn" class="btn-secondary">← Hacer otra pregunta</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <section class="view view--tareas hidden" id="view-tareas" aria-labelledby="title-tareas" aria-hidden="true">
     <div class="card card-wide card-flat">
@@ -1799,6 +2068,32 @@
     <div class="modal-actions" style="margin-top:1rem">
       <button type="button" class="btn-secondary" id="tareaModalCancelarBtn" style="white-space:nowrap">Cancelar</button>
       <button type="button" class="btn btn-primary" id="tareaCrearBtn" style="flex:0;padding:0.65rem 1.1rem;white-space:nowrap">Guardar tarea</button>
+    </div>
+  </div>
+</div>
+
+<div id="cargarOpinionesModal" class="modal-overlay" aria-hidden="true">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="cargarOpinionesModalTitle">
+    <h3 id="cargarOpinionesModalTitle" class="modal-title">Cargar opiniones desde CSV</h3>
+    <p class="modal-desc">
+      Selecciona el alojamiento y sube el CSV exportado de Booking o Google. La fuente se detecta automáticamente por las cabeceras.
+    </p>
+
+    <div class="form-group">
+      <label for="cargarOpinionesAlojamiento">Alojamiento</label>
+      <select id="cargarOpinionesAlojamiento"></select>
+    </div>
+
+    <div class="form-group">
+      <label for="cargarOpinionesArchivo">Archivo CSV</label>
+      <input type="file" id="cargarOpinionesArchivo" accept=".csv,text/csv">
+    </div>
+
+    <div class="status-msg" id="cargarOpinionesMsg" style="display:none;margin-bottom:0.5rem"></div>
+
+    <div class="modal-actions">
+      <button type="button" id="cargarOpinionesCancelar" class="btn-secondary">Cancelar</button>
+      <button type="button" id="cargarOpinionesConfirmar" class="btn btn-primary" style="flex:0;padding:0.6rem 0.95rem">Cargar</button>
     </div>
   </div>
 </div>
@@ -3235,21 +3530,38 @@
   // OPINIONES
   // ═══════════════════════════════════════════════════════════
   (function () {
-    const opinionesBtn       = document.getElementById('opinionesBtn');
-    const opinionesBtnText   = document.getElementById('opinionesBtnText');
-    const opinionesStatusMsg = document.getElementById('opinionesStatusMsg');
-    const opinionesConfigWarning = document.getElementById('opinionesConfigWarning');
+    const opinionesStatusMsg  = document.getElementById('opinionesStatusMsg');
     const opinionesLastUpdate = document.getElementById('opinionesLastUpdate');
-    const opinionesTbody     = document.getElementById('opinionesTbody');
-    const opinionesTableWrap = document.getElementById('opinionesTableWrap');
-    const opinionesEmpty     = document.getElementById('opinionesEmpty');
-    const opinionesFiltros   = document.getElementById('opinionesFiltros');
-    const opinionesSourceTags= document.getElementById('opinionesSourceTags');
+    const opinionesTbody      = document.getElementById('opinionesTbody');
+    const opinionesTableWrap  = document.getElementById('opinionesTableWrap');
+    const opinionesEmpty      = document.getElementById('opinionesEmpty');
+    const opinionesLoadMore    = document.getElementById('opinionesLoadMore');
+    const opinionesLoadMoreBtn = document.getElementById('opinionesLoadMoreBtn');
+    const opinionesLoadMoreInfo= document.getElementById('opinionesLoadMoreInfo');
+    const filtrosAloj          = document.getElementById('opinionesFiltrosAloj');
+    const filtrosFuente        = document.getElementById('opinionesFiltrosFuente');
+    const opinionesChartWrap   = document.getElementById('opinionesChartWrap');
+    const opinionesChartCanvas = document.getElementById('opinionesChart');
+    const opinionesVistaBtns    = document.getElementById('opinionesVistaBtns');
+    const viewOpinionesEl       = document.getElementById('view-opiniones');
+    const opinionesChartGranBtns = document.getElementById('opinionesChartGranBtns');
+    let chartInstance = null;
+    let activeChartGranularity = 'month';
 
-    let allReviews = [];
-    let activeFuente = '';
+    const PAGE_SIZE = 25;
+    let activeFuente    = '';
+    let activeAloj      = '';
+    let currentOffset   = 0;
+    let currentTotal    = 0;
+    let isLoading       = false;
 
     const SOURCE_LABELS = { booking: 'Booking', google: 'Google', tripadvisor: 'TripAdvisor' };
+    const ALOJ_LABELS  = {
+      'La Fonda de los Príncipes': 'La Fonda',
+      'Iconic Suites':             'Iconic',
+      'Miosotis Suites':           'Miosotis',
+      'The Garden Suites':         'The Garden',
+    };
     const SOURCE_COLORS = {
       booking:     { bg: '#003580', text: '#fff' },
       google:      { bg: '#4285f4', text: '#fff' },
@@ -3263,31 +3575,46 @@
 
     function fmtDate(d) {
       if (!d) return '—';
-      try { return new Date(d + 'T12:00:00').toLocaleDateString('es-ES', { day:'2-digit', month:'short', year:'numeric' }); }
+      try { return new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-ES', { day:'2-digit', month:'short', year:'numeric' }); }
       catch { return d; }
     }
 
     function fmtDateTime(dt) {
       if (!dt) return '—';
-      try { return new Date(dt).toLocaleString('es-ES', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }); }
+      try { return new Date(String(dt).replace(' ', 'T')).toLocaleString('es-ES', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }); }
       catch { return dt; }
     }
 
-    function renderStars(rating, ratingMax) {
+    /** Etiqueta corta para el eje X (mes YYYY-MM o semana YYYY-Www → w2/26). */
+    function formatChartPeriodLabel(period, granularity) {
+      if (!period) return '—';
+      if (granularity === 'week') {
+        const m = String(period).match(/^(\d{4})-W(\d{1,2})$/i);
+        if (m) {
+          const yy = String(m[1]).slice(-2);
+          return `w${Number(m[2])}/${yy}`;
+        }
+        return String(period);
+      }
+      const parts = String(period).split('-');
+      if (parts.length >= 2) {
+        const y = Number(parts[0]);
+        const mo = Number(parts[1]);
+        if (!Number.isNaN(y) && !Number.isNaN(mo)) {
+          return new Date(y, mo - 1, 1).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
+        }
+      }
+      return String(period);
+    }
+
+    function renderRating(rating, ratingMax) {
       if (rating == null) return '—';
       const max = ratingMax || 10;
-      // Normalizar a 0-5
-      const normalized = (rating / max) * 5;
-      const full = Math.floor(normalized);
-      const half = normalized - full >= 0.5 ? 1 : 0;
-      const empty = 5 - full - half;
       const pct = Math.round((rating / max) * 100);
-      const stars =
-        '★'.repeat(full) +
-        (half ? '½' : '') +
-        '☆'.repeat(empty);
       const label = max === 10 ? `${rating.toFixed(1)}/10` : `${rating.toFixed(1)}/5`;
-      return `<span class="opiniones-stars" title="${label}" style="color:${pct >= 70 ? '#f5a623' : pct >= 40 ? '#e08a00' : '#cc3300'}">${stars}</span> <small style="color:var(--text-muted,#888)">${label}</small>`;
+      const normalized = (rating / max) * 10;
+      const color = normalized > 9 ? '#2e9e5b' : normalized > 7 ? '#2563eb' : normalized > 5 ? '#e08a00' : '#cc3300';
+      return `<span style="font-weight:600;color:${color}">${label}</span>`;
     }
 
     function sourceBadge(source) {
@@ -3296,133 +3623,515 @@
       return `<span class="opiniones-source-badge" style="background:${c.bg};color:${c.text}">${escHtml(label)}</span>`;
     }
 
-    function renderTable(reviews) {
-      if (!reviews.length) {
-        opinionesTableWrap.style.display = 'none';
-        opinionesEmpty.style.display = 'block';
-        return;
-      }
-      opinionesEmpty.style.display = 'none';
-      opinionesTableWrap.style.display = '';
+    function bookingFullHtml(r) {
+      const parts = [];
+      if (r.titulo)              parts.push(`<span style="font-weight:600;color:var(--text,#1e293b)">${escHtml(r.titulo)}</span>`);
+      if (r.comentario_positivo) parts.push(`<span style="color:#1a7a40">${escHtml(r.comentario_positivo)}</span>`);
+      if (r.comentario_negativo) parts.push(`<span style="color:#c0392b">${escHtml(r.comentario_negativo)}</span>`);
+      return parts.join('<br>');
+    }
 
-      opinionesTbody.innerHTML = reviews.map(r => `
+    function rowsHtml(reviews) {
+      return reviews.map((r) => {
+        const fullHtml = r.source === 'booking'
+          ? bookingFullHtml(r)
+          : escHtml(r.text || '');
+        const sumHtml = r.resumen ? escHtml(r.resumen) : '';
+        return `
         <tr>
-          <td>${sourceBadge(r.source)}</td>
+          <td style="white-space:nowrap;font-size:0.82rem">${escHtml(ALOJ_LABELS[r.alojamiento] || r.alojamiento || '—')}</td>
+          <td style="white-space:nowrap">${sourceBadge(r.source)}</td>
           <td style="white-space:nowrap">${escHtml(fmtDate(r.review_date))}</td>
-          <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(r.author || '')}">${escHtml(r.author || '—')}</td>
-          <td class="opiniones-text-cell">${escHtml(r.text || '—')}</td>
-          <td style="text-align:center;white-space:nowrap">${renderStars(r.rating, r.rating_max)}</td>
-        </tr>
-      `).join('');
+          <td class="opiniones-text-cell"><div class="opiniones-text-inner"><span class="opiniones-body-full">${fullHtml}</span><span class="opiniones-body-resumen">${sumHtml}</span></div></td>
+          <td style="text-align:center;white-space:nowrap">${renderRating(r.rating, r.rating_max)}</td>
+        </tr>`;
+      }).join('');
     }
 
-    function applyFilter() {
-      const filtered = activeFuente
-        ? allReviews.filter(r => r.source === activeFuente)
-        : allReviews;
-      renderTable(filtered);
-    }
-
-    function updateSourceTags(reviews) {
-      const counts = {};
-      for (const r of reviews) counts[r.source] = (counts[r.source] || 0) + 1;
-      const tags = Object.entries(counts).map(([src, n]) => {
-        const c = SOURCE_COLORS[src] || { bg: '#666', text: '#fff' };
-        const label = SOURCE_LABELS[src] || src;
-        return `<span style="background:${c.bg};color:${c.text};padding:0.2rem 0.55rem;border-radius:999px;font-size:0.78rem;font-weight:600">${label} ${n}</span>`;
+    function updateFilterCounts(counts, alojCounts, total) {
+      // Botones de fuente
+      filtrosFuente.querySelectorAll('.opiniones-filtro-btn').forEach(btn => {
+        const base = btn.dataset.label || btn.textContent;
+        const src  = btn.dataset.source;
+        const n    = src === '' ? total : (counts[src] || 0);
+        btn.textContent = n > 0 ? `${base} (${n})` : base;
       });
-      opinionesSourceTags.innerHTML = tags.join('');
+      // Botones de alojamiento
+      const totalAloj = Object.values(alojCounts).reduce((a, b) => a + b, 0);
+      filtrosAloj.querySelectorAll('.opiniones-filtro-btn').forEach(btn => {
+        const base = btn.dataset.label || btn.textContent;
+        const aloj = btn.dataset.aloj;
+        const n    = aloj === '' ? totalAloj : (alojCounts[aloj] || 0);
+        btn.textContent = n > 0 ? `${base} (${n})` : base;
+      });
     }
 
-    async function loadOpiniones() {
-      try {
-        const url = activeFuente ? `/api/opiniones?source=${activeFuente}` : '/api/opiniones';
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('Error cargando opiniones');
-        const { reviews, lastScrapedAt } = await res.json();
-        allReviews = reviews || [];
-        opinionesLastUpdate.textContent = lastScrapedAt
-          ? `Última actualización: ${fmtDateTime(lastScrapedAt)}`
-          : 'Última actualización: —';
-        updateSourceTags(allReviews);
-        applyFilter();
-      } catch (err) {
-        opinionesStatusMsg.textContent = err.message;
-        opinionesStatusMsg.className = 'status-msg error';
-        opinionesStatusMsg.style.display = '';
+    function updateLoadMore(loaded) {
+      const hasMore = loaded < currentTotal;
+      opinionesLoadMore.style.display = hasMore ? '' : 'none';
+      if (hasMore) {
+        const remaining = currentTotal - loaded;
+        opinionesLoadMoreInfo.textContent =
+          `Mostrando ${loaded} de ${currentTotal} · quedan ${remaining}`;
       }
     }
 
-    async function checkConfig() {
+    async function loadStats() {
       try {
-        const res = await fetch('/api/opiniones/config');
+        const params = new URLSearchParams();
+        if (activeFuente) params.set('source', activeFuente);
+        if (activeAloj)   params.set('alojamiento', activeAloj);
+        params.set('granularity', activeChartGranularity === 'week' ? 'week' : 'month');
+        const res = await fetch(`/api/opiniones/stats?${params}`);
         if (!res.ok) return;
-        const cfg = await res.json();
-        const missing = Object.entries(cfg)
-          .filter(([, v]) => !v)
-          .map(([k]) => `${k.toUpperCase()}_REVIEWS_URL`);
-        if (missing.length) {
-          opinionesConfigWarning.innerHTML =
-            `<strong>Aviso:</strong> Las siguientes fuentes no están configuradas en el .env y se omitirán: <code>${missing.join(', ')}</code>.`;
-          opinionesConfigWarning.className = 'status-msg';
-          opinionesConfigWarning.style.display = '';
-        } else {
-          opinionesConfigWarning.style.display = 'none';
+        const data = await res.json();
+        let periods = data.periods;
+        let granularity = data.granularity === 'week' ? 'week' : 'month';
+        if (!periods && data.months) {
+          periods = data.months.map((m) => ({ period: m.month, count: m.count, avg_rating: m.avg_rating }));
+          granularity = 'month';
         }
-      } catch {}
+        if (!periods || !periods.length) {
+          opinionesChartWrap.style.display = 'none';
+          return;
+        }
+
+        opinionesChartWrap.style.display = '';
+
+        const labels = periods.map((p) => formatChartPeriodLabel(p.period, granularity));
+        const counts  = periods.map((p) => p.count);
+        const ratings = periods.map((p) => p.avg_rating);
+
+        const validRatings = ratings.filter((v) => v != null);
+        const yRatingMin = validRatings.length
+          ? Math.max(0, Math.floor(Math.min(...validRatings)))
+          : 0;
+
+        if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+
+        const xAxisTitle = granularity === 'week' ? 'Semana' : 'Mes';
+
+        chartInstance = new Chart(opinionesChartCanvas, {
+          plugins: [ChartDataLabels],
+          data: {
+            labels,
+            datasets: [
+              {
+                type: 'line',
+                label: 'Nota media /10',
+                data: ratings,
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37,99,235,0.07)',
+                pointBackgroundColor: '#2563eb',
+                yAxisID: 'yRating',
+                tension: 0.35,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                fill: true,
+                order: 1,
+                datalabels: {
+                  align: 'top',
+                  anchor: 'end',
+                  color: '#2563eb',
+                  font: { size: 11, weight: '600' },
+                  formatter: (v) => v != null ? v.toFixed(2) : '',
+                },
+              },
+              {
+                type: 'bar',
+                label: 'Nº opiniones',
+                data: counts,
+                backgroundColor: 'rgba(37,99,235,0.13)',
+                borderColor: 'rgba(37,99,235,0.35)',
+                borderWidth: 1,
+                yAxisID: 'yCount',
+                order: 2,
+                datalabels: { display: false },
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: { font: { size: 11 }, boxWidth: 12, padding: 12 },
+              },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => ctx.dataset.label === 'Nota media /10'
+                    ? ` Nota: ${ctx.raw}/10`
+                    : ` Opiniones: ${ctx.raw}`,
+                },
+              },
+            },
+            scales: {
+              x: {
+                ticks: {
+                  font: { size: 11 },
+                  maxRotation: granularity === 'week' ? 50 : 0,
+                  autoSkip: true,
+                  maxTicksLimit: granularity === 'week' ? 20 : 14,
+                },
+                title: { display: true, text: xAxisTitle, font: { size: 10 } },
+                grid: { display: false },
+              },
+              yRating: {
+                type: 'linear',
+                position: 'left',
+                min: yRatingMin, max: 10,
+                ticks: { stepSize: 0.5, font: { size: 11 } },
+                title: { display: true, text: 'Nota /10', font: { size: 10 } },
+              },
+              yCount: {
+                type: 'linear',
+                position: 'right',
+                min: 0,
+                ticks: { font: { size: 11 } },
+                grid: { drawOnChartArea: false },
+                title: { display: true, text: 'Opiniones', font: { size: 10 } },
+              },
+            },
+          },
+        });
+      } catch (err) {
+        console.error('Error cargando gráfica:', err);
+      }
     }
 
-    // Filtros
-    opinionesFiltros.addEventListener('click', (e) => {
-      const btn = e.target.closest('.opiniones-filtro-btn');
-      if (!btn) return;
-      opinionesFiltros.querySelectorAll('.opiniones-filtro-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      activeFuente = btn.dataset.source || '';
-      applyFilter();
-    });
+    async function loadOpiniones(reset = true) {
+      if (isLoading) return;
+      isLoading = true;
+      opinionesLoadMoreBtn.disabled = true;
 
-    // Botón recibir opiniones
-    opinionesBtn.addEventListener('click', async () => {
-      opinionesBtn.disabled = true;
-      opinionesBtnText.textContent = 'Obteniendo opiniones…';
-      opinionesStatusMsg.style.display = 'none';
+      if (reset) {
+        currentOffset = 0;
+        opinionesTbody.innerHTML = '';
+        opinionesTableWrap.style.display = 'none';
+        opinionesEmpty.style.display = 'none';
+        opinionesLoadMore.style.display = 'none';
+        opinionesStatusMsg.style.display = 'none';
+      }
+
+      if (reset) loadStats();
 
       try {
-        const res = await fetch('/api/opiniones/scrape', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ onlyNew: true }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.error || 'Error al obtener opiniones');
+        const params = new URLSearchParams({ limit: PAGE_SIZE, offset: currentOffset });
+        if (activeFuente) params.set('source', activeFuente);
+        if (activeAloj)   params.set('alojamiento', activeAloj);
+        const res = await fetch(`/api/opiniones?${params}`);
+        if (!res.ok) throw new Error('Error cargando opiniones');
+        const { reviews, total, counts, alojCounts, hasMore, lastScrapedAt } = await res.json();
 
-        const parts = [];
-        if (data.inserted > 0) parts.push(`${data.inserted} nueva${data.inserted !== 1 ? 's' : ''}`);
-        else parts.push('Sin opiniones nuevas');
-        if (data.errors && data.errors.length) {
-          parts.push(`${data.errors.length} error${data.errors.length !== 1 ? 'es' : ''}: ${data.errors.map(e => e.label).join(', ')}`);
+        currentTotal   = total || 0;
+        currentOffset += (reviews || []).length;
+
+        if (reset) {
+          opinionesLastUpdate.textContent = lastScrapedAt
+            ? `Última actualización: ${fmtDateTime(lastScrapedAt)}`
+            : 'Última actualización: —';
+          updateFilterCounts(counts || {}, alojCounts || {}, total || 0);
         }
 
-        opinionesStatusMsg.textContent = parts.join(' · ');
-        opinionesStatusMsg.className = data.errors && data.errors.length ? 'status-msg' : 'status-msg success';
-        opinionesStatusMsg.style.display = '';
+        if (currentOffset === 0 || !reviews.length && reset) {
+          opinionesTableWrap.style.display = 'none';
+          opinionesEmpty.style.display = 'block';
+        } else {
+          opinionesEmpty.style.display = 'none';
+          opinionesTableWrap.style.display = '';
+          opinionesTbody.insertAdjacentHTML('beforeend', rowsHtml(reviews || []));
+        }
 
-        await loadOpiniones();
+        updateLoadMore(currentOffset);
       } catch (err) {
         opinionesStatusMsg.textContent = err.message;
         opinionesStatusMsg.className = 'status-msg error';
         opinionesStatusMsg.style.display = '';
       } finally {
-        opinionesBtn.disabled = false;
-        opinionesBtnText.textContent = 'Recibir opiniones nuevas';
+        isLoading = false;
+        opinionesLoadMoreBtn.disabled = false;
       }
+    }
+
+    opinionesLoadMoreBtn.addEventListener('click', () => loadOpiniones(false));
+
+    opinionesTbody.addEventListener('click', (e) => {
+      const inner = e.target.closest('.opiniones-text-inner');
+      if (inner) inner.classList.toggle('expanded');
+    });
+
+    opinionesVistaBtns.addEventListener('click', (e) => {
+      const btn = e.target.closest('.opiniones-filtro-btn[data-op-vista]');
+      if (!btn) return;
+      const mode = btn.dataset.opVista;
+      opinionesVistaBtns.querySelectorAll('.opiniones-filtro-btn[data-op-vista]').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      viewOpinionesEl.classList.remove('op-mode-full', 'op-mode-resumen');
+      viewOpinionesEl.classList.add(mode === 'full' ? 'op-mode-full' : 'op-mode-resumen');
+      opinionesTbody.querySelectorAll('.opiniones-text-inner.expanded').forEach((el) => el.classList.remove('expanded'));
+    });
+
+    opinionesChartGranBtns.addEventListener('click', (e) => {
+      const btn = e.target.closest('.opiniones-filtro-btn[data-chart-gran]');
+      if (!btn) return;
+      const g = btn.dataset.chartGran === 'week' ? 'week' : 'month';
+      opinionesChartGranBtns.querySelectorAll('.opiniones-filtro-btn[data-chart-gran]').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeChartGranularity = g;
+      loadStats();
+    });
+
+    // Filtro alojamiento
+    filtrosAloj.addEventListener('click', (e) => {
+      const btn = e.target.closest('.opiniones-filtro-btn');
+      if (!btn) return;
+      filtrosAloj.querySelectorAll('.opiniones-filtro-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeAloj = btn.dataset.aloj || '';
+      loadOpiniones(true);
+    });
+
+    // Filtro fuente
+    filtrosFuente.addEventListener('click', (e) => {
+      const btn = e.target.closest('.opiniones-filtro-btn');
+      if (!btn) return;
+      filtrosFuente.querySelectorAll('.opiniones-filtro-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeFuente = btn.dataset.source || '';
+      loadOpiniones(true);
+    });
+
+    // ── Modal "Cargar opiniones desde CSV" ───────────────────────────────
+    const cargarBtn        = document.getElementById('opinionesCargarBtn');
+    const cargarModal      = document.getElementById('cargarOpinionesModal');
+    const cargarAlojSelect = document.getElementById('cargarOpinionesAlojamiento');
+    const cargarArchivoInp = document.getElementById('cargarOpinionesArchivo');
+    const cargarMsg        = document.getElementById('cargarOpinionesMsg');
+    const cargarCancelarB  = document.getElementById('cargarOpinionesCancelar');
+    const cargarConfirmarB = document.getElementById('cargarOpinionesConfirmar');
+
+    let alojamientosCargados = false;
+
+    async function populateAlojamientos() {
+      if (alojamientosCargados) return;
+      try {
+        const res = await fetch('/api/alojamientos');
+        if (!res.ok) throw new Error('No se pudo obtener el listado de alojamientos.');
+        const { alojamientos } = await res.json();
+        cargarAlojSelect.innerHTML = (alojamientos || [])
+          .map(a => `<option value="${escHtml(a.name)}">${escHtml(a.name)}</option>`)
+          .join('');
+        alojamientosCargados = true;
+      } catch (err) {
+        cargarAlojSelect.innerHTML = '';
+        cargarMsg.textContent = err.message;
+        cargarMsg.className = 'status-msg error';
+        cargarMsg.style.display = '';
+      }
+    }
+
+    function abrirCargarModal() {
+      cargarMsg.style.display = 'none';
+      cargarArchivoInp.value = '';
+      populateAlojamientos();
+      cargarModal.classList.add('visible');
+      cargarModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function cerrarCargarModal() {
+      cargarModal.classList.remove('visible');
+      cargarModal.setAttribute('aria-hidden', 'true');
+    }
+
+    cargarBtn.addEventListener('click', abrirCargarModal);
+    cargarCancelarB.addEventListener('click', cerrarCargarModal);
+    cargarModal.addEventListener('click', (e) => {
+      if (e.target === cargarModal) cerrarCargarModal();
+    });
+
+    cargarConfirmarB.addEventListener('click', async () => {
+      const alojamiento = cargarAlojSelect.value;
+      const file = cargarArchivoInp.files && cargarArchivoInp.files[0];
+
+      if (!alojamiento) {
+        cargarMsg.textContent = 'Selecciona un alojamiento.';
+        cargarMsg.className = 'status-msg error';
+        cargarMsg.style.display = '';
+        return;
+      }
+      if (!file) {
+        cargarMsg.textContent = 'Selecciona un archivo CSV.';
+        cargarMsg.className = 'status-msg error';
+        cargarMsg.style.display = '';
+        return;
+      }
+
+      cargarConfirmarB.disabled = true;
+      cargarCancelarB.disabled = true;
+
+      cargarMsg.textContent = 'Preparando…';
+      cargarMsg.className = 'status-msg';
+      cargarMsg.style.display = 'block';
+
+      // Polling de progreso mientras el servidor procesa con IA
+      let pollInterval = setInterval(async () => {
+        try {
+          const p = await fetch('/api/opiniones/import-progress').then(r => r.json());
+          if (p.active && p.total > 0) {
+            cargarMsg.textContent = `Procesando ${p.processed} de ${p.total} opiniones con IA…`;
+          } else if (!p.active && p.total > 0) {
+            cargarMsg.textContent = `Guardando en base de datos…`;
+          }
+        } catch {}
+      }, 800);
+
+      try {
+        const fd = new FormData();
+        fd.append('alojamiento', alojamiento);
+        fd.append('file', file);
+
+        const res = await fetch('/api/opiniones/import-csv', { method: 'POST', body: fd });
+        clearInterval(pollInterval);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Error importando CSV');
+
+        const fuenteLabel = SOURCE_LABELS[data.source] || data.source;
+        const partes = [
+          `${fuenteLabel} · ${data.inserted} nueva${data.inserted !== 1 ? 's' : ''}`,
+        ];
+        if (data.skipped) partes.push(`${data.skipped} duplicada${data.skipped !== 1 ? 's' : ''}`);
+        if (data.errors) partes.push(`${data.errors} error${data.errors !== 1 ? 'es' : ''}`);
+
+        cargarMsg.textContent = partes.join(' · ');
+        cargarMsg.className = 'status-msg success';
+
+        await loadOpiniones();
+        setTimeout(cerrarCargarModal, 1200);
+      } catch (err) {
+        clearInterval(pollInterval);
+        cargarMsg.textContent = err.message;
+        cargarMsg.className = 'status-msg error';
+      } finally {
+        cargarConfirmarB.disabled = false;
+        cargarCancelarB.disabled = false;
+      }
+    });
+
+    // ── Modal Asistente IA ────────────────────────────────────────────────────
+    const iaModal            = document.getElementById('iaModal');
+    const iaModalCancel      = document.getElementById('iaModalCancelar');
+    const opinionesIaBtn     = document.getElementById('opinionesIaBtn');
+    const askInput           = document.getElementById('opinionesAskInput');
+    const askBtn             = document.getElementById('opinionesAskBtn');
+    const askStatus          = document.getElementById('opinionesAskStatus');
+    const askResult          = document.getElementById('opinionesAskResult');
+    const iaAskInputSection  = document.getElementById('iaAskInputSection');
+    const iaAskOutputSection = document.getElementById('iaAskOutputSection');
+    const iaAskPreguntaLabel = document.getElementById('iaAskPreguntaLabel');
+    const iaOtraPreguntaBtn  = document.getElementById('iaOtraPreguntaBtn');
+    const askAlojSelect      = document.getElementById('askAlojSelect');
+    const askFuenteSelect    = document.getElementById('askFuenteSelect');
+    const askLimitSelect     = document.getElementById('askLimitSelect');
+    const askTextoSelect     = document.getElementById('askTextoSelect');
+
+    function mostrarInputIA() {
+      iaAskInputSection.style.display  = 'flex';
+      iaAskOutputSection.style.display = 'none';
+    }
+    function mostrarOutputIA() {
+      iaAskInputSection.style.display  = 'none';
+      iaAskOutputSection.style.display = 'flex';
+    }
+
+    function abrirIaModal() {
+      mostrarInputIA();
+      askResult.innerHTML = '';
+      askStatus.style.display = 'none';
+      iaModal.classList.add('visible');
+      iaModal.setAttribute('aria-hidden', 'false');
+      setTimeout(() => askInput.focus(), 80);
+    }
+    function cerrarIaModal() {
+      iaModal.classList.remove('visible');
+      iaModal.setAttribute('aria-hidden', 'true');
+    }
+
+    opinionesIaBtn.addEventListener('click', abrirIaModal);
+    iaModalCancel.addEventListener('click', cerrarIaModal);
+    iaOtraPreguntaBtn.addEventListener('click', () => { mostrarInputIA(); setTimeout(() => askInput.focus(), 40); });
+    iaModal.addEventListener('click', (e) => { if (e.target === iaModal) cerrarIaModal(); });
+
+    // Preguntas rápidas
+    iaModal.querySelectorAll('.ia-quick-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        askInput.value = btn.textContent.trim();
+        preguntarIA();
+      });
+    });
+
+    async function preguntarIA() {
+      const pregunta    = askInput.value.trim();
+      const askAloj     = askAlojSelect.value;
+      const askFuente   = askFuenteSelect.value;
+      const askLimit    = parseInt(askLimitSelect.value, 10) || 0;
+      const askTexto    = askTextoSelect.value;
+
+      if (!pregunta) { askInput.focus(); return; }
+
+      // Pasar a la vista de respuesta mostrando la pregunta
+      iaAskPreguntaLabel.textContent = pregunta;
+      askResult.innerHTML = `<div class="ia-thinking"><div class="ia-thinking-spinner"></div><span>Analizando opiniones<span class="ia-thinking-dots"></span></span></div>`;
+      askStatus.style.display = 'none';
+      mostrarOutputIA();
+
+      try {
+        const body = { pregunta, texto: askTexto };
+        if (askFuente) body.source      = askFuente;
+        if (askAloj)   body.alojamiento = askAloj;
+        if (askLimit)  body.limit       = askLimit;
+        body.granularity = activeChartGranularity === 'week' ? 'week' : 'month';
+
+        const res  = await fetch('/api/opiniones/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Error del servidor');
+
+        askResult.innerHTML = '';
+        const respuestaHtml = typeof marked !== 'undefined'
+          ? marked.parse(data.respuesta || '')
+          : `<p>${escHtml(data.respuesta || '—')}</p>`;
+
+        const meta = [];
+        if (data.analizadas) meta.push(`${data.analizadas} opinión${data.analizadas !== 1 ? 'es' : ''} analizadas de ${data.total}`);
+        if (data.tokens)     meta.push(`${data.tokens.total.toLocaleString('es-ES')} tokens`);
+        if (data.coste_usd != null) meta.push(`~$${data.coste_usd.toFixed(4)}`);
+        const metaHtml = meta.length
+          ? `<p style="margin-top:0.75rem;font-size:0.78rem;color:var(--text-muted,#888)">— ${escHtml(meta.join(' · '))}</p>`
+          : '';
+
+        askResult.innerHTML = respuestaHtml + metaHtml;
+      } catch (err) {
+        askResult.innerHTML = '';
+        askStatus.textContent = `Error: ${err.message}`;
+        askStatus.style.display = '';
+      }
+    }
+
+    askBtn.addEventListener('click', preguntarIA);
+    askInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) preguntarIA();
     });
 
     window.__opinionesOnShow = function () {
       loadOpiniones();
-      checkConfig();
     };
+
+    loadOpiniones();
   })();
 </script>
 
