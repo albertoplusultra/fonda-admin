@@ -625,7 +625,7 @@ const OPINIONES_18W_DAYS = 18 * 7;
  * Usa UNION ALL para que la paginación sea correcta entre las dos tablas.
  * @param {{ source?: string, alojamiento?: string, limit?: number, offset?: number, timeWindow?: 'month'|'week' }} opts
  */
-async function getReviews({ source, alojamiento, limit = 50, offset = 0, timeWindow } = {}) {
+async function getReviews({ source, alojamiento, limit = 50, offset = 0, timeWindow, fromDate, toDate, notaMin, notaMax } = {}) {
   const client = getClient();
   if (!client) return [];
 
@@ -633,7 +633,19 @@ async function getReviews({ source, alojamiento, limit = 50, offset = 0, timeWin
   const filterArgs = [];
   if (source) { conditions.push("source = ?"); filterArgs.push(source); }
   if (alojamiento) { conditions.push("alojamiento = ?"); filterArgs.push(alojamiento); }
-  if (timeWindow === "week") {
+  // Filtro de nota sobre escala normalizada 0-10 (Google se multiplica x2 en la subquery)
+  if (notaMin != null) { conditions.push("rating_norm >= ?"); filterArgs.push(notaMin); }
+  if (notaMax != null) { conditions.push("rating_norm <= ?"); filterArgs.push(notaMax); }
+  if (fromDate && toDate) {
+    conditions.push("date(review_date) BETWEEN ? AND ?");
+    filterArgs.push(fromDate, toDate);
+  } else if (fromDate) {
+    conditions.push("date(review_date) >= ?");
+    filterArgs.push(fromDate);
+  } else if (toDate) {
+    conditions.push("date(review_date) <= ?");
+    filterArgs.push(toDate);
+  } else if (timeWindow === "week") {
     conditions.push(`date(review_date) >= date('now', '-${OPINIONES_18W_DAYS} days')`);
   } else if (timeWindow === "month") {
     conditions.push("date(review_date) >= date('now', '-18 months')");
@@ -641,8 +653,9 @@ async function getReviews({ source, alojamiento, limit = 50, offset = 0, timeWin
   const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 
   const rs = await client.execute({
-    sql: `SELECT source, alojamiento, review_date, author, rating, rating_max,
-                 titulo, comentario_positivo, comentario_negativo, review_text, resumen, scraped_at
+    sql: `SELECT source, alojamiento, review_date, author, rating, rating_max, rating_norm,
+                 titulo, comentario_positivo, comentario_negativo, review_text, resumen, scraped_at,
+                 personal, limpieza, ubicacion, instalaciones, confort, relacion_calidad_precio
           FROM (
             SELECT 'booking'        AS source,
                    alojamiento,
@@ -650,12 +663,19 @@ async function getReviews({ source, alojamiento, limit = 50, offset = 0, timeWin
                    nombre_cliente   AS author,
                    puntuacion       AS rating,
                    10.0             AS rating_max,
+                   puntuacion       AS rating_norm,
                    titulo,
                    comentario_positivo,
                    comentario_negativo,
                    NULL             AS review_text,
                    resumen,
-                   scraped_at
+                   scraped_at,
+                   personal,
+                   limpieza,
+                   ubicacion,
+                   instalaciones,
+                   confort,
+                   relacion_calidad_precio
             FROM booking_reviews
             UNION ALL
             SELECT 'google',
@@ -664,10 +684,12 @@ async function getReviews({ source, alojamiento, limit = 50, offset = 0, timeWin
                    author,
                    rating,
                    5.0,
+                   rating * 2.0     AS rating_norm,
                    NULL, NULL, NULL,
                    COALESCE(NULLIF(message_original, ''), review) AS review_text,
                    resumen,
-                   scraped_at
+                   scraped_at,
+                   NULL, NULL, NULL, NULL, NULL, NULL
             FROM google_reviews
           ) combined
           ${whereClause}
@@ -700,9 +722,15 @@ async function getReviews({ source, alojamiento, limit = 50, offset = 0, timeWin
       scraped_at: r.scraped_at,
     };
     if (r.source === "booking") {
-      obj.titulo             = r.titulo             || null;
+      obj.titulo              = r.titulo              || null;
       obj.comentario_positivo = r.comentario_positivo || null;
       obj.comentario_negativo = r.comentario_negativo || null;
+      obj.personal            = r.personal            != null ? Number(r.personal)            : null;
+      obj.limpieza            = r.limpieza            != null ? Number(r.limpieza)            : null;
+      obj.ubicacion           = r.ubicacion           != null ? Number(r.ubicacion)           : null;
+      obj.instalaciones       = r.instalaciones       != null ? Number(r.instalaciones)       : null;
+      obj.confort             = r.confort             != null ? Number(r.confort)             : null;
+      obj.relacion_calidad_precio = r.relacion_calidad_precio != null ? Number(r.relacion_calidad_precio) : null;
     }
     return obj;
   });

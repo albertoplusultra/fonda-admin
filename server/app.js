@@ -207,6 +207,196 @@ app.get("/api/opiniones/stats", async (req, res) => {
   }
 });
 
+// ── Planificación IA: interpreta la pregunta y devuelve parámetros de consulta ──
+app.post("/api/opiniones/plan", async (req, res) => {
+  console.log("[plan] recibida petición, body:", JSON.stringify(req.body));
+  try {
+    const pregunta    = String(req.body?.pregunta || "").trim();
+    // Filtros manuales que ya están fijados (si los hay, se respetan tal cual)
+    const forzarAloj   = req.body?.alojamiento || null;
+    const forzarSource = req.body?.source      || null;
+    const forzarTexto  = req.body?.texto       || null; // "resumen"|"completo"|"solo_nota"|"subcategorias"
+    const forzarLimit  = parseInt(req.body?.limit, 10) || 0;
+
+    if (!pregunta) return res.status(400).json({ error: "Falta la pregunta." });
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(503).json({ error: "El asistente IA no está configurado (falta OPENAI_API_KEY)." });
+    }
+
+    const hoy = new Date().toISOString().slice(0, 10);
+
+    const esquema = `
+ESQUEMA BASE DE DATOS (SQLite):
+
+booking_reviews:
+  alojamiento TEXT               — nombre del alojamiento
+  fecha_comentario TEXT          — fecha de la opinión (YYYY-MM-DD)
+  puntuacion REAL (0-10)         — nota global
+  personal REAL (0-10)           — nota de personal/atención
+  limpieza REAL (0-10)           — nota de limpieza
+  ubicacion REAL (0-10)          — nota de ubicación
+  instalaciones REAL (0-10)      — nota de instalaciones/equipamiento
+  confort REAL (0-10)            — nota de confort
+  relacion_calidad_precio REAL (0-10)
+  titulo TEXT, comentario_positivo TEXT, comentario_negativo TEXT
+  resumen TEXT                   — resumen generado por IA (≈2 frases)
+  [SOLO Booking tiene subcategorías de puntuación]
+
+google_reviews:
+  alojamiento TEXT
+  review_date TEXT (YYYY-MM-DD)
+  rating REAL (0-5)              — nota global
+  review TEXT                    — texto completo
+  resumen TEXT                   — resumen generado por IA
+  [Google NO tiene subcategorías de puntuación]
+
+VALORES POSIBLES:
+  alojamiento: "La Fonda de los Príncipes" | "Iconic Suites" | "Miosotis Suites" | "The Garden Suites"
+  source:      "booking" | "google"
+
+MODOS DE TEXTO (modoTexto):
+  "resumen"       — campo resumen (texto corto ~2 frases). Usar por defecto para preguntas cualitativas generales.
+  "completo"      — texto íntegro. Usar cuando se necesite máximo detalle del contenido: nombres de empleados mencionados, anécdotas concretas, frases literales.
+  "solo_nota"     — solo puntuación global + fecha. Para tendencias de nota, evolución, comparativa de ratings globales.
+  "subcategorias" — SOLO puntuaciones numéricas por categoría de Booking (personal, limpieza, ubicación, instalaciones, confort, calidad-precio). NO contiene texto ni nombres. Implica source="booking". Usar ÚNICAMENTE para comparar medias numéricas por categoría. NUNCA usar para preguntas sobre nombres de empleados o contenido cualitativo.
+
+FILTRO DE NOTA (notaMin / notaMax):
+  Usa notaMin y/o notaMax cuando la pregunta mencione "nota por encima de X", "nota por debajo de X", "malas notas", "bajas puntuaciones", etc.
+  SIEMPRE usa escala 0-10, independientemente de la fuente. Google se normaliza internamente a 0-10 antes de filtrar.
+  Ejemplo: "opiniones con nota por debajo de 5" → notaMax: 4.9
+  Ejemplo: "opiniones con nota menor de 4" → notaMax: 3.9
+
+REGLA CRÍTICA: Si la pregunta menciona empleados, personas concretas o nombres de staff, usar SIEMPRE modoTexto="completo" (source=null para buscar en ambas fuentes). "subcategorias" NO contiene nombres.
+`;
+
+    // Contexto de la pregunta anterior (para preguntas de seguimiento)
+    const contextoAnterior = req.body?.contextoAnterior ? String(req.body.contextoAnterior).trim() : null;
+
+    const instrucciones = [
+      forzarAloj   ? `El filtro de alojamiento ya está fijado a: "${forzarAloj}". Usa ese valor.` : "",
+      forzarSource ? `El filtro de fuente ya está fijado a: "${forzarSource}". Usa ese valor.` : "",
+      forzarTexto  ? `El modo de texto ya está fijado a: "${forzarTexto}". Usa ese valor.` : "",
+      forzarLimit  ? `El límite de opiniones ya está fijado a: ${forzarLimit}. Usa ese valor.` : "",
+      contextoAnterior
+        ? `CONTEXTO DE SEGUIMIENTO — La nueva pregunta viene después de esta conversación:\n${contextoAnterior}\n` +
+          `Interpreta referencias implícitas (p.ej. "las críticas de ese edificio" → el edificio mencionado antes). ` +
+          `Reutiliza el rango de fechas anterior salvo que la nueva pregunta indique otro. ` +
+          `Elige el modoTexto más adecuado para la NUEVA pregunta (puede cambiar respecto al anterior).`
+        : "",
+    ].filter(Boolean).join("\n");
+
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      max_tokens: 350,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content:
+            `Eres un planificador de consultas para una base de datos de opiniones de hoteles. ` +
+            `Hoy es ${hoy}. ` +
+            `Dado el esquema y la pregunta del usuario, devuelve un JSON con los parámetros óptimos para consultar la BD. ` +
+            `Responde SOLO con JSON válido, sin explicaciones.\n\n` +
+            `REGLA DE FECHAS: si la pregunta hace referencia a un período ("este mes", "el mes pasado", "esta semana", "últimos 30 días", etc.), SIEMPRE fija fromDate y toDate con el rango exacto. ` +
+            `Si la pregunta pide "las N últimas" sin período, deja fromDate y toDate en null y usa limit=N. ` +
+            `Si la pregunta es sobre tendencias históricas ("cada mes", "evolución", "por meses"), usa un rango amplio (ej. últimos 18 meses).\n\n` +
+            esquema +
+            (instrucciones ? `\n\nFILTROS YA FIJADOS POR EL USUARIO (respétalos):\n${instrucciones}` : ""),
+        },
+        // Few-shot: empleados/nombres → completo
+        {
+          role: "user",
+          content: `Pregunta: "¿Quiénes son los mejores empleados de la Fonda de los Príncipes en los últimos 30 días?"\n\nDevuelve un JSON con exactamente estos campos:\n{\n  "alojamiento": string|null,\n  "source": "booking"|"google"|null,\n  "fromDate": "YYYY-MM-DD"|null,\n  "toDate": "YYYY-MM-DD"|null,\n  "limit": number,\n  "modoTexto": "resumen"|"completo"|"solo_nota"|"subcategorias",\n  "resumenDetectado": string,\n  "razonamiento": string\n}`,
+        },
+        {
+          role: "assistant",
+          content: JSON.stringify({
+            alojamiento: "La Fonda de los Príncipes",
+            source: null,
+            fromDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+            toDate: hoy,
+            limit: 0,
+            modoTexto: "completo",
+            resumenDetectado: "Empleados mencionados positivamente en La Fonda (últimos 30 días)",
+            razonamiento: "Para encontrar nombres de empleados hay que leer el texto completo de las opiniones. 'subcategorias' solo contiene puntuaciones numéricas, nunca nombres. Se usan ambas fuentes para no perder menciones de Google.",
+          }),
+        },
+        // Few-shot: subcategorías numéricas → subcategorias
+        {
+          role: "user",
+          content: `Pregunta: "¿Cuál es la media de limpieza y personal en Booking este mes?"\n\nDevuelve un JSON con exactamente estos campos:\n{\n  "alojamiento": string|null,\n  "source": "booking"|"google"|null,\n  "fromDate": "YYYY-MM-DD"|null,\n  "toDate": "YYYY-MM-DD"|null,\n  "limit": number,\n  "modoTexto": "resumen"|"completo"|"solo_nota"|"subcategorias",\n  "resumenDetectado": string,\n  "razonamiento": string\n}`,
+        },
+        {
+          role: "assistant",
+          content: JSON.stringify({
+            alojamiento: null,
+            source: "booking",
+            fromDate: hoy.slice(0, 7) + "-01",
+            toDate: hoy,
+            limit: 0,
+            modoTexto: "subcategorias",
+            resumenDetectado: "Medias de limpieza y personal en Booking este mes",
+            razonamiento: "La pregunta pide medias numéricas de categorías específicas de Booking, que es exactamente lo que proporciona el modo 'subcategorias'.",
+          }),
+        },
+        {
+          role: "user",
+          content:
+            `Pregunta: "${pregunta}"\n\n` +
+            `Devuelve un JSON con exactamente estos campos:\n` +
+            `{\n` +
+            `  "alojamiento": string|null,   // nombre exacto del alojamiento o null para todos\n` +
+            `  "source": "booking"|"google"|null,  // null para ambas fuentes\n` +
+            `  "fromDate": "YYYY-MM-DD"|null, // fecha inicio del rango, null si no aplica\n` +
+            `  "toDate": "YYYY-MM-DD"|null,   // fecha fin del rango, null si no aplica\n` +
+            `  "limit": number,               // IMPORTANTE: si se especifica fromDate/toDate usa SIEMPRE 0 (traer todos los del rango). Solo usa >0 si la pregunta dice explícitamente "los últimos N" sin rango de fechas.\n` +
+            `  "modoTexto": "resumen"|"completo"|"solo_nota"|"subcategorias",\n` +
+            `  "notaMin": number|null,         // nota mínima (inclusive) para filtrar en BD. Null si no aplica.\n` +
+            `  "notaMax": number|null,         // nota máxima (inclusive) para filtrar en BD. Null si no aplica.\n` +
+            `  "resumenDetectado": string,    // frase corta en español describiendo qué se va a consultar\n` +
+            `  "razonamiento": string         // explica en 1-3 frases por qué elegiste cada parámetro (alojamiento, fechas, modo de texto, fuente)\n` +
+            `}`,
+        },
+      ],
+    });
+
+    let params;
+    try {
+      params = JSON.parse(completion.choices[0]?.message?.content || "{}");
+    } catch {
+      params = {};
+    }
+
+    // Garantizar valores por defecto seguros
+    const result = {
+      alojamiento:      forzarAloj   || params.alojamiento   || null,
+      source:           forzarSource || params.source        || null,
+      fromDate:         params.fromDate  || null,
+      toDate:           params.toDate    || null,
+      limit:            forzarLimit  || (Number.isFinite(params.limit) ? params.limit : 0),
+      modoTexto:        forzarTexto  || params.modoTexto     || "resumen",
+      notaMin:          Number.isFinite(params.notaMin) ? params.notaMin : null,
+      notaMax:          Number.isFinite(params.notaMax) ? params.notaMax : null,
+      resumenDetectado: params.resumenDetectado || "Opiniones de todos los alojamientos",
+      razonamiento:     params.razonamiento     || null,
+    };
+
+    // Si el modo es "subcategorias", forzar source=booking
+    if (result.modoTexto === "subcategorias" && !forzarSource) {
+      result.source = "booking";
+    }
+
+    return res.json(result);
+  } catch (error) {
+    const message = (error instanceof Error && error.message) ? error.message : String(error || "Error inesperado");
+    console.error("[plan] ERROR:", message, error);
+    return res.status(500).json({ error: message || "Error interno en planificación" });
+  }
+});
+
+// ── Análisis IA: consulta opiniones y responde la pregunta ──
 app.post("/api/opiniones/ask", async (req, res) => {
   try {
     const pregunta    = String(req.body?.pregunta || "").trim();
@@ -214,7 +404,11 @@ app.post("/api/opiniones/ask", async (req, res) => {
     const alojamiento = req.body?.alojamiento || undefined;
     const limitReq    = parseInt(req.body?.limit, 10) || 0;
     const limit       = limitReq > 0 ? limitReq : 500;
-    const usarResumen = String(req.body?.texto || "resumen") !== "completo";
+    const modoTexto   = String(req.body?.texto || "resumen");
+    const fromDate    = req.body?.fromDate || undefined;
+    const toDate      = req.body?.toDate   || undefined;
+    const notaMin     = req.body?.notaMin != null ? Number(req.body.notaMin) : undefined;
+    const notaMax     = req.body?.notaMax != null ? Number(req.body.notaMax) : undefined;
 
     if (!pregunta) {
       return res.status(400).json({ error: "Falta la pregunta." });
@@ -224,52 +418,137 @@ app.post("/api/opiniones/ask", async (req, res) => {
       return res.status(503).json({ error: "El asistente IA no está configurado (falta OPENAI_API_KEY)." });
     }
 
-    const granAsk = String(req.body?.granularity || "month").toLowerCase();
-    const timeWindow = granAsk === "week" ? "week" : "month";
-    const reviews = await getReviews({ source, alojamiento, limit, offset: 0, timeWindow });
+    // El planificador IA ya fija las fechas adecuadas según la pregunta.
+    // No aplicamos ninguna ventana de tiempo automática para no interferir.
+    const timeWindow = undefined;
+
+    // En modo subcategorias forzar source=booking
+    const effectiveSource = (modoTexto === "subcategorias" && !source) ? "booking" : source;
+
+    const reviews = await getReviews({
+      source: effectiveSource,
+      alojamiento,
+      notaMin: Number.isFinite(notaMin) ? notaMin : undefined,
+      notaMax: Number.isFinite(notaMax) ? notaMax : undefined,
+      limit,
+      offset: 0,
+      timeWindow,
+      fromDate,
+      toDate,
+    });
 
     if (!reviews.length) {
       return res.json({ respuesta: "No hay opiniones que coincidan con los filtros seleccionados." });
     }
 
-    const textos = reviews
-      .filter((r) => usarResumen ? r.resumen : r.text)
-      .map((r, i) => {
-        const fecha = r.review_date ? r.review_date.slice(0, 10) : "sin fecha";
-        const fuente = r.source === "booking" ? "Booking" : "Google";
-        const edificio = (r.alojamiento && String(r.alojamiento).trim()) || "—";
-        const nota = r.rating != null ? ` | Nota: ${r.rating}/${r.rating_max}` : "";
-        const contenido = usarResumen ? r.resumen : r.text.replace(/\n+/g, " ");
-        return `[${i + 1}] (${fuente}, ${edificio}, ${fecha}${nota}) ${contenido}`;
-      })
-;
+    let textos;
+    let systemPrompt;
+
+    if (modoTexto === "solo_nota") {
+      textos = reviews
+        .filter((r) => r.rating != null)
+        .map((r, i) => {
+          const fecha = r.review_date ? r.review_date.slice(0, 10) : "sin fecha";
+          const fuente = r.source === "booking" ? "Booking" : "Google";
+          const edificio = (r.alojamiento && String(r.alojamiento).trim()) || "—";
+          return `[${i + 1}] (${fuente}, ${edificio}, ${fecha}, Nota: ${r.rating}/${r.rating_max})`;
+        });
+      systemPrompt =
+        "Eres un asistente que analiza puntuaciones de opiniones de huéspedes de hoteles. " +
+        "Cada entrada indica fuente, edificio, fecha y nota global. No hay texto de opinión. " +
+        "Responde siempre en español, de forma clara y concisa. " +
+        "Basa tu respuesta únicamente en los datos proporcionados.";
+    } else if (modoTexto === "subcategorias") {
+      textos = reviews
+        .filter((r) => r.source === "booking")
+        .map((r, i) => {
+          const fecha = r.review_date ? r.review_date.slice(0, 10) : "sin fecha";
+          const edificio = (r.alojamiento && String(r.alojamiento).trim()) || "—";
+          const cats = [
+            r.rating          != null ? `Global:${r.rating}`                  : null,
+            r.personal        != null ? `Personal:${r.personal}`              : null,
+            r.limpieza        != null ? `Limpieza:${r.limpieza}`              : null,
+            r.ubicacion       != null ? `Ubicación:${r.ubicacion}`            : null,
+            r.instalaciones   != null ? `Instalaciones:${r.instalaciones}`    : null,
+            r.confort         != null ? `Confort:${r.confort}`                : null,
+            r.relacion_calidad_precio != null ? `CalidadPrecio:${r.relacion_calidad_precio}` : null,
+          ].filter(Boolean).join(" | ");
+          const resumenTexto = r.resumen ? ` | "${r.resumen}"` : "";
+          return `[${i + 1}] (${edificio}, ${fecha}) ${cats}${resumenTexto}`;
+        });
+      systemPrompt =
+        "Eres un asistente que analiza opiniones de Booking de hoteles. " +
+        "Cada entrada indica edificio, fecha, puntuaciones por categoría (Personal, Limpieza, Ubicación, Instalaciones, Confort, CalidadPrecio, escala 0-10) y, cuando está disponible, un resumen textual de la opinión. " +
+        "Para cada edificio: calcula la MEDIA de las categorías relevantes e indica el número de opiniones. " +
+        "Además, usa los resúmenes textuales para añadir una breve valoración cualitativa de lo que dicen los clientes. " +
+        "Incluye TODOS los edificios que aparezcan en los datos. Si un edificio tiene pocas opiniones, indícalo. " +
+        "Responde siempre en español, de forma clara y concisa. " +
+        "Basa tu respuesta únicamente en los datos proporcionados.";
+    } else {
+      const usarResumen = modoTexto !== "completo";
+      textos = reviews
+        .map((r, i) => {
+          const fecha = r.review_date ? r.review_date.slice(0, 10) : "sin fecha";
+          const fuente = r.source === "booking" ? "Booking" : "Google";
+          const edificio = (r.alojamiento && String(r.alojamiento).trim()) || "—";
+          const nota = r.rating != null ? ` | Nota: ${r.rating}/${r.rating_max}` : "";
+          // Fallback: resumen → texto completo → campos título/positivo/negativo → solo metadata
+          let contenido;
+          if (usarResumen) {
+            contenido = r.resumen
+              || r.text
+              || [r.titulo, r.comentario_positivo, r.comentario_negativo].filter(Boolean).join(" / ")
+              || "(sin texto)";
+          } else {
+            contenido = r.text
+              || [r.titulo, r.comentario_positivo, r.comentario_negativo].filter(Boolean).join(" / ")
+              || r.resumen
+              || "(sin texto)";
+          }
+          return `[${i + 1}] (${fuente}, ${edificio}, ${fecha}${nota}) ${contenido}`;
+        });
+      systemPrompt =
+        "Eres un asistente que analiza opiniones de huéspedes de hoteles. " +
+        "Cada opinión indica fuente (Booking/Google), edificio o alojamiento, fecha y a veces nota. " +
+        "Si la pregunta es sobre empleados o personal concreto, extrae y lista los nombres propios " +
+        "de empleados que aparezcan mencionados positivamente en las opiniones, agrupándolos por número de menciones. " +
+        "Si no se mencionan nombres en las opiniones, indícalo claramente. " +
+        "Responde siempre en español, de forma clara y concisa. " +
+        "Basa tu respuesta únicamente en las opiniones proporcionadas.";
+    }
 
     if (!textos.length) {
-      return res.json({ respuesta: "Las opiniones filtradas no tienen texto suficiente para analizar." });
+      return res.json({ respuesta: "Las opiniones filtradas no tienen datos suficientes para analizar." });
     }
 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+    const historial = Array.isArray(req.body?.history) ? req.body.history : [];
+    const datosCtx =
+      `Tienes ${textos.length} registros:\n\n` +
+      textos.join("\n");
+
+    // Si hay historial anterior, lo incluimos como contexto en el system prompt.
+    // Esto evita conflictos entre datos de distintos turnos (cada turno puede
+    // tener diferente alojamiento o modo de texto).
+    let systemFinal = systemPrompt;
+    if (historial.length >= 2) {
+      const resumenHistorial = historial
+        .map((m) => (m.role === "user" ? `Pregunta previa: ${m.content}` : `Respuesta previa: ${m.content}`))
+        .join("\n\n");
+      systemFinal +=
+        `\n\nCONTEXTO DE LA CONVERSACIÓN ANTERIOR (úsalo para interpretar la nueva pregunta):\n${resumenHistorial}`;
+    }
+
+    const mensajes = [
+      { role: "system", content: systemFinal },
+      { role: "user", content: `${datosCtx}\n\nPREGUNTA: ${pregunta}` },
+    ];
+
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      max_tokens: 600,
-      messages: [
-        {
-          role: "system",
-          content:
-            "Eres un asistente que analiza opiniones de huéspedes de hoteles. " +
-            "Cada opinión indica fuente (Booking/Google), edificio o alojamiento, fecha y a veces nota. " +
-            "Responde siempre en español, de forma clara y concisa. " +
-            "Basa tu respuesta únicamente en las opiniones proporcionadas.",
-        },
-        {
-          role: "user",
-          content:
-            `Tienes ${textos.length} opiniones de huéspedes:\n\n` +
-            textos.join("\n") +
-            `\n\nPREGUNTA: ${pregunta}`,
-        },
-      ],
+      max_tokens: 1200,
+      messages: mensajes,
     });
 
     const respuesta = completion.choices[0]?.message?.content?.trim() || "Sin respuesta.";

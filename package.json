@@ -5,7 +5,7 @@
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
-    "dev": "node --watch server/server.js",
+    "dev": "nodemon server/server.js",
     "import:reviews": "node scripts/import-reviews-csv.js",
     "backup:db": "node scripts/backup-turso-db.js"
   },
@@ -28,5 +28,8 @@
     "puppeteer-core": "^24.40.0",
     "tesseract.js": "^7.0.0",
     "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
   }
 }

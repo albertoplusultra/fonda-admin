@@ -2,7 +2,7 @@
  * aiReviews.js
  * Enriquece filas de opiniones antes de insertarlas:
  *  - Traduce el texto al español (si ya está en español lo deja igual)
- *  - Genera un resumen breve de la opinión (máx. 20 palabras)
+ *  - Genera un resumen breve de la opinión (máx. 25 palabras, mencionando empleados si aparecen)
  *
  * Callbacks disponibles:
  *   onProgress(processed, total) – se llama tras cada lote completado
@@ -45,7 +45,7 @@ Cada objeto de respuesta tiene:
 - "titulo": el título de la opinión TRADUCIDO al español (si ya está en español déjalo igual; si está vacío devuelve "").
 - "pos": el comentario positivo TRADUCIDO al español (si ya está en español déjalo igual; si está vacío devuelve "").
 - "neg": el comentario negativo TRADUCIDO al español (si ya está en español déjalo igual; si está vacío devuelve "").
-- "resumen": resumen neutro de la opinión en un máximo de 20 palabras. Si no hay texto devuelve "".
+- "resumen": resumen neutro de la opinión en un máximo de 25 palabras. Si se menciona un empleado por nombre o puesto (ej: "María en recepción", "el recepcionista Juan"), inclúyelo. Si no hay texto devuelve "".
 
 Devuelve SOLO {"items":[...]} sin ningún markdown.
 
@@ -104,7 +104,7 @@ async function enrichGoogleRows(rows, { onProgress, onBatch } = {}) {
 Para cada elemento del array JSON que recibes, devuelve un objeto con los mismos índices.
 Cada objeto de respuesta tiene:
 - "text_es": el texto de la opinión TRADUCIDO al español (si ya está en español déjalo igual; si está vacío devuelve "").
-- "resumen": resumen neutro de la opinión en un máximo de 20 palabras. Si no hay texto devuelve "".
+- "resumen": resumen neutro de la opinión en un máximo de 25 palabras. Si se menciona un empleado por nombre o puesto (ej: "María en recepción", "el recepcionista Juan"), inclúyelo. Si no hay texto devuelve "".
 
 Devuelve SOLO {"items":[...]} sin ningún markdown.
 
